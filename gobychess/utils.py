@@ -6,6 +6,7 @@ from gmpy2 import xmpz, bit_scan1,  bit_clear
 
 EMPTY = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
 
+
 def print_bitboard(board):
     '''
     Print bitboard
@@ -36,7 +37,6 @@ def generate_table():
     table['north west'] = generate_direction(7)
     table['north east'] = generate_direction(9)
 
-
     return table
 
 
@@ -57,31 +57,36 @@ def generate_direction(direction):
         attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
         attack_board[i] = 0
 
-        if(direction == +8):
-            condition = lambda x: x < 56
-        if(direction == -1):
-            condition = lambda x: x % 8 != 0
-        if(direction == -8):
-            condition = lambda x: x > 7
-        if(direction == +1):
-            condition = lambda x: (x + 1) % 8 != 0
-        if(direction == -7):
-            condition = lambda x: (x > 7 and (x + 1) % 8 != 0)
-        if(direction == -9):
-            condition = lambda x: (x > 7 and x % 8 != 0)
-        if(direction == 7):
-            condition = lambda x: (x < 56 and x % 8 != 0)
-        if(direction == 9):
-            condition = lambda x: (x < 56 and (x + 1) % 8 != 0)
+        if direction == +8:
+            def condition(field):
+                return field < 56
+        elif direction == -1:
+            def condition(field):
+                return field % 8 != 0
+        elif direction == -8:
+            def condition(field):
+                return field > 7
+        elif direction == +1 :
+            def condition(field):
+                return (field + 1) % 8 != 0
+        elif direction == -7:
+            def condition(field):
+                return field > 7 and (field + 1) % 8 != 0
+        elif direction == -9:
+            def condition(field):
+                return field > 7 and field % 8 != 0
+        elif direction == 7:
+            def condition(field):
+                return field < 56 and field % 8 != 0
+        elif direction == 9:
+            def condition(field):
+                return field < 56 and (field + 1) % 8 != 0
 
         while condition(field_count):
             field_count += direction
             attack_board[field_count] = 1
 
         directions.append(attack_board)
-
-        #print_bitboard(attack_board)
-        #print("===================")
 
     return directions
 
@@ -94,64 +99,106 @@ blockers[21] = 1
 blockers[23] = 1
 
 
-def blocker_computation(square, blockers_opposite, blockers_own, direction):
-    collision_opposite = table[direction][square] & blockers_opposite
-    collision_own = table[direction][square] & blockers_own
-    if(direction in ['east', 'north east', 'north', 'north west']):
-        idx_opposite = bit_scan1(collision_opposite) if bit_scan1(collision_opposite) else 66
-        idx_own = bit_scan1(collision_own) if bit_scan1(collision_own) else 66
-    if(direction in ['west', 'south west', 'south', 'south east']):
-        idx_opposite = reverse_bit_scan1(collision_opposite) if reverse_bit_scan1(collision_opposite) else 66
-        idx_own = reverse_bit_scan1(collision_own) if reverse_bit_scan1(collision_own) else 66
+def rook_sliding(square, blockers):
+    '''
+    generates bitboard of all attack squares for the rook with given blockers
+    '''
 
-    # print("=====================")
-    # print_bitboard(collision_opposite)
-    # print("=====================")
-    # print_bitboard(collision_own)
-    # print("=====================")
-    # print(idx_opposite)
-    # print(idx_own)
+    attacks = table['east'][square]
+    if table['east'][square] & blockers:
+        idx = bit_scan1(table['east'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['east'][idx])
 
-    if idx_opposite == 66 and idx_own == 66:
-        blocked = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
-    elif idx_opposite < idx_own:
-        idx = idx_opposite
-        blocked = table[direction][idx]
-        #print("opp: " + str(idx))
-    else:
-        idx = idx_own - 1
-        blocked = table[direction][idx]
-        #print("own" + str(idx))
+    attacks |= table['north'][square]
+    if table['north'][square] & blockers:
+        idx = bit_scan1(table['north'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['north'][idx])
 
-    blocked = (1 << 64) - 1 - blocked
-    movement = table[direction][square] & blocked
-    return movement
+    attacks |= table['west'][square]
+    if table['west'][square] & blockers:
+        idx = reverse_bit_scan1(table['west'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['west'][idx])
+
+    attacks |= table['south'][square]
+    if table['south'][square] & blockers:
+        idx = reverse_bit_scan1(table['south'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['south'][idx])
+
+    return attacks
 
 
-def rook_sliding(square, blockers_opposite, blockers_own):
+def bishop_sliding(square, blockers):
+    '''
+    generates bitboard of all attack squares for the bishop with given blockers
+    '''
 
-    pass
+    attacks = table['north east'][square]
+    if table['north east'][square] & blockers:
+        idx = bit_scan1(table['north east'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['north east'][idx])
+
+    attacks |= table['north west'][square]
+    if table['north west'][square] & blockers:
+        idx = bit_scan1(table['north west'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['north west'][idx])
+
+    attacks |= table['south west'][square]
+    if table['south west'][square] & blockers:
+        idx = reverse_bit_scan1(table['south west'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['south west'][idx])
+
+    attacks |= table['south east'][square]
+    if table['south east'][square] & blockers:
+        idx = reverse_bit_scan1(table['south east'][square] & blockers)
+        attacks = attacks & ((1 << 64) - 1 - table['south east'][idx])
+
+    return attacks
+
+
+def queen_sliding(square, blockers):
+    '''
+    generates bitboard of all attack squares for the quenn with given blockers
+    '''
+    attacks = rook_sliding(square, blockers) | bishop_sliding(square, blockers)
+
+    return attacks
 
 
 def reverse_bit_scan1(bitboard):
     length = bitboard.bit_length()
     if length == 0:
         return None
-    else:
-        return length - 1
+    return length - 1
 
 
 empty = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
 
 print_bitboard(blockers)
 print()
-print_bitboard(blocker_computation(17, blockers, empty, 'east'))
+
+# print_bitboard(rook_sliding(17, blockers))
+# print()
+# print_bitboard(rook_sliding(45, blockers))
+# print()
+# print_bitboard(rook_sliding(7, blockers))
+# print()
+# print_bitboard(rook_sliding(22, blockers))
+
+# print_bitboard(bishop_sliding(28, blockers))
+# print()
+# print_bitboard(bishop_sliding(45, blockers))
+# print()
+# print_bitboard(bishop_sliding(7, blockers))
+# print()
+# print_bitboard(bishop_sliding(22, blockers))
+
+print_bitboard(queen_sliding(28, blockers))
 print()
-print_bitboard(blocker_computation(17, blockers, empty, 'north'))
+print_bitboard(queen_sliding(45, blockers))
 print()
-print_bitboard(blocker_computation(17, blockers, empty, 'west'))
+print_bitboard(queen_sliding(7, blockers))
 print()
-print_bitboard(blocker_computation(17, blockers, empty, 'south'))
+print_bitboard(queen_sliding(22, blockers))
 
 
 
