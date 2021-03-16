@@ -2,8 +2,8 @@
 
 from gmpy2 import xmpz
 
-from utils import generate_table, print_bitboard
-
+from .utils import print_bitboard
+from .movegen import generate_table
 
 class Board():
 
@@ -16,7 +16,6 @@ class Board():
                           xmpz(0b1000000100000000000000000000000000000000000000000000000000000000),
                           xmpz(0b0001000000000000000000000000000000000000000000000000000000000000),
                           xmpz(0b0000100000000000000000000000000000000000000000000000000000000000)]
-
         self.pieces[1] = [xmpz(0b0000000000000000000000000000000000000000000000001111111100000000),
                           xmpz(0b0000000000000000000000000000000000000000000000000000000001000010),
                           xmpz(0b0000000000000000000000000000000000000000000000000000000000100100),
@@ -30,10 +29,15 @@ class Board():
         self.black_queenside = 1
         self.en_passent = None
         self.halfmove_clock = 0
-        self.fullmove_clock = 1
-
+        self.fullmove_counter = 1
 
     def from_fen(self, fen):
+        '''
+        Set board to fen position
+
+        Args:
+            String containing the fen position
+        '''
         words = fen.split()
 
         self.to_move = words[1]
@@ -45,31 +49,63 @@ class Board():
             self.black_queenside = 0
         if 'K' in words[2]:
             self.white_kingside = 1
+        else:
+            self.white_kingside = 0
         if 'Q' in words[2]:
             self.white_queenside = 1
+        else:
+            self.white_queenside = 0
         if 'k' in words[2]:
             self.black_kingside = 1
+        else:
+            self.black_kingside = 0
         if 'q' in words[2]:
             self.black_queenside = 1
+        else:
+            self.black_queenside = 0
 
         if words[3] == '-':
             self.en_passent = None
         else:
             self.en_passent = words[3]
 
-        self.halfmove_clock = words[4]
-        self.fullmove_counter = words[5]
+        self.halfmove_clock = int(words[4])
+        self.fullmove_counter = int(words[5])
 
-        print(words)
+        rows = words[0].split("/")
+        index = 0
+        piece_strings = {'p': 0, 'n': 1, 'b': 2, 'r': 3, 'q': 4, 'k': 5}
+        for row in rows[::-1]:
+            for char in row:
+                if char.isdigit():
+                    for i in range(int(char)):
+                        for piecetype in range(6):
+                            self.pieces[0][piecetype][index] = 0
+                            self.pieces[1][piecetype][index] = 0
+                        index += 1
+                else:
+                    color = 0
+                    if char.isupper():
+                        color = 1
+                        char = char.lower()
+                    for piecetype in range(6):
+                        if piecetype == piece_strings[char]:
+                            self.pieces[color][piecetype][index] = 1
+                        else:
+                            self.pieces[0][piecetype][index] = 0
+                            self.pieces[1][piecetype][index] = 0
+                    index += 1
+
+        print_bitboard(self.pieces[0][3])
 
     def __str__(self):
+        '''
+        Print current position
+        '''
         board_str = "." * 64
         board_str = list(board_str)
 
         piece_strings = {0: 'p', 1: 'n', 2: 'b', 3: 'r', 4: 'q', 5: 'k'}
-
-
-
 
         for i in [0, 1]:
             piece = ""
@@ -88,17 +124,9 @@ class Board():
             board_str[i * 8 - 1] += '\n'
         board_str = "".join(board_str)
 
-        return "To move: {}\n{}\nEn passent square: {}\nmoves played: {}".format(self.to_move, board_str, self.en_passent, self.fullmove_counter)
+        return "To move: {}\n{}\nEn passent square: \
+                {}\nmoves played: {}".format(self.to_move, board_str,
+                                             self.en_passent, self.fullmove_counter)
 
     def gen_moves(self):
         pass
-
-
-
-bo = Board()
-
-bo.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-print()
-print()
-print()
-print(str(bo))
