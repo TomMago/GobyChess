@@ -28,7 +28,7 @@ def reverse_bit_scan1(bitboard):
     return length - 1
 
 
-def index_of_sqare(square):
+def index_of_square(square):
     '''
     Index of square
 
@@ -54,12 +54,27 @@ def bitboard_of_square(square):
     Returns:
         xmpz: Bitboard with 1 on respective square
     '''
-    idx = index_of_sqare(square)
+    idx = index_of_square(square)
     empty_bitboard = xmpz(0b00000000000000000000000000000000000000000000000000000000000000000)
     empty_bitboard[idx] = 1
     return empty_bitboard
 
+def bitboard_from_squares(squares):
+    '''
+    Bitboard for a string with multiple squares
 
-print_bitboard(bitboard_of_square('f6') | bitboard_of_square('d4'))
-print()
-print_bitboard(xmpz(0b00000000000000000000000000000100000000000000001001100101100000000))
+    Args:
+        squares (String): multiple chess squares seperated by whitespace
+
+    Returns:
+        xmpz: Bitboard with 1 on respective squares
+    '''
+    empty_bitboard = xmpz(0b00000000000000000000000000000000000000000000000000000000000000000)
+    squares = squares.split()
+    for square in squares:
+        idx = index_of_square(square)
+        empty_bitboard[idx] = 1
+    return empty_bitboard
+
+def invert_bitboard(bitboard):
+    return (1 << 64) - 1 - bitboard

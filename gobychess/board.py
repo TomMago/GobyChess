@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+import itertools
+
 from gmpy2 import xmpz
 
-from .utils import print_bitboard
 from .movegen import generate_table
+from .utils import print_bitboard
+
 
 class Board():
 
@@ -30,6 +33,12 @@ class Board():
         self.en_passent = None
         self.halfmove_clock = 0
         self.fullmove_counter = 1
+
+        self.all_pieces_black = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        self.all_pieces_white = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        self.all_pieces = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+
+        self.update_all_pieces()
 
     def from_fen(self, fen):
         '''
@@ -96,7 +105,7 @@ class Board():
                             self.pieces[1][piecetype][index] = 0
                     index += 1
 
-        print_bitboard(self.pieces[0][3])
+        self.update_all_pieces()
 
     def __str__(self):
         '''
@@ -121,7 +130,9 @@ class Board():
         board_str = "".join(board_str)[::-1]
         board_str = list(board_str)
         for i in range(8):
-            board_str[i * 8 - 1] += '\n'
+            x = board_str[i * 8:(i + 1) * 8]
+            board_str[i * 8:(i + 1) * 8] = x[::-1]
+            board_str[(i + 1) * 8 - 1] += '\n'
         board_str = "".join(board_str)
 
         return "To move: {}\n{}\nEn passent square: \
@@ -130,3 +141,17 @@ class Board():
 
     def gen_moves(self):
         pass
+
+    def update_all_pieces(self):
+        self.all_pieces = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        self.all_pieces_black = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        self.all_pieces_white = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+
+        for i, j in itertools.product(range(2), range(6)):
+            self.all_pieces = self.all_pieces | self.pieces[i][j]
+
+        for i in range(6):
+            self.all_pieces_white = self.all_pieces_white | self.pieces[1][i]
+
+        for i in range(6):
+            self.all_pieces_black = self.all_pieces_black | self.pieces[0][i]

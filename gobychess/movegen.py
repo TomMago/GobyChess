@@ -1,8 +1,81 @@
 #!/usr/bin/env python3
 
-from gmpy2 import bit_scan1, xmpz
+from gmpy2 import bit_scan1, xmpz, bit_clear
 
-from .utils import print_bitboard, reverse_bit_scan1
+from .utils import print_bitboard, reverse_bit_scan1, invert_bitboard
+
+
+def generate_non_sliding():
+    move_table = {'pawn white': [], 'pawn black': [], 'knight': [], 'king': []}
+    move_table['knight'] = generate_knight()
+    move_table['king'] = generate_king()
+
+
+def generate_king():
+    '''
+    Generate all king moves for every square
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        if (i + 1) % 8 != 0:
+            attack_board[i + 1] = 1
+        if i % 8 != 0:
+            attack_board[i - 1] = 1
+        if (i + 1) % 8 != 0 and (i + 9) <= 63:
+            attack_board[i + 9] = 1
+        if (i + 1) % 8 != 0 and (i - 7) > 0:
+            attack_board[i - 7] = 1
+        if (i + 8) <= 63:
+            attack_board[i + 8] = 1
+        if (i - 8) >= 0:
+            attack_board[i - 8] = 1
+        if i % 8 != 0 and (i + 7) <= 63:
+            attack_board[i + 7] = 1
+        if i % 8 != 0 and (i - 9) > 0:
+            attack_board[i - 9] = 1
+        print(i)
+        print_bitboard(attack_board)
+        moves.append(attack_board)
+    return moves
+
+
+def generate_knight():
+    '''
+    Generate all knight moves for every square
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+
+        possible_directions = []
+        if i % 8 > 0:
+            possible_directions.append(15)
+            possible_directions.append(-17)
+        if i % 8 > 1:
+            possible_directions.append(6)
+            possible_directions.append(-10)
+        if i % 8 < 7:
+            possible_directions.append(17)
+            possible_directions.append(-15)
+        if i % 8 < 6:
+            possible_directions.append(-6)
+            possible_directions.append(10)
+        for j in possible_directions:
+            field = i + j
+            if 0 <= field <= 63:
+                attack_board[field] = 1
+        print(i)
+        print_bitboard(attack_board)
+        moves.append(attack_board)
+    return moves
+
 
 def generate_table():
     '''
@@ -103,22 +176,22 @@ def rook_sliding(square, blockers):
     attacks = table['east'][square]
     if table['east'][square] & blockers:
         idx = bit_scan1(table['east'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['east'][idx])
+        attacks = attacks & invert_bitboard(table['east'][idx])
 
     attacks |= table['north'][square]
     if table['north'][square] & blockers:
         idx = bit_scan1(table['north'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['north'][idx])
+        attacks = attacks & invert_bitboard(table['north'][idx])
 
     attacks |= table['west'][square]
     if table['west'][square] & blockers:
         idx = reverse_bit_scan1(table['west'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['west'][idx])
+        attacks = attacks & invert_bitboard(table['west'][idx])
 
     attacks |= table['south'][square]
     if table['south'][square] & blockers:
         idx = reverse_bit_scan1(table['south'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['south'][idx])
+        attacks = attacks & invert_bitboard(table['south'][idx])
 
     return attacks
 
@@ -137,22 +210,22 @@ def bishop_sliding(square, blockers):
     attacks = table['north east'][square]
     if table['north east'][square] & blockers:
         idx = bit_scan1(table['north east'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['north east'][idx])
+        attacks = attacks & invert_bitboard(table['north east'][idx])
 
     attacks |= table['north west'][square]
     if table['north west'][square] & blockers:
         idx = bit_scan1(table['north west'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['north west'][idx])
+        attacks = attacks & invert_bitboard(table['north west'][idx])
 
     attacks |= table['south west'][square]
     if table['south west'][square] & blockers:
         idx = reverse_bit_scan1(table['south west'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['south west'][idx])
+        attacks = attacks & invert_bitboard(table['south west'][idx])
 
     attacks |= table['south east'][square]
     if table['south east'][square] & blockers:
         idx = reverse_bit_scan1(table['south east'][square] & blockers)
-        attacks = attacks & ((1 << 64) - 1 - table['south east'][idx])
+        attacks = attacks & invert_bitboard(table['south east'][idx])
 
     return attacks
 
@@ -163,7 +236,7 @@ def queen_sliding(square, blockers):
 
     Args:
         square (int): Index of the square of the rook
-        blockers: Bitboard of all other pieces on the board
+        blockers (xmpz): Bitboard of all other pieces on the board
 
     Returns:
         xmpz bitboard of attacked squares
@@ -173,47 +246,68 @@ def queen_sliding(square, blockers):
     return attacks
 
 
+def yield_moveset(square, moveset):
+    '''
+    yield all moves of a piece from one square to all squares on a bitboard
+    '''
+    while moveset:
+        index_to = bit_scan1(moveset)
+        yield (square, index_to, None)
+        moveset = moveset.bit_clear(index_to)
 
 
+def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
+    '''
+    generate bishop moves
+
+    Args:
+        bishop_bitboard (xmpz): Bitboard of positions of bishops
+        all_pieces (xmpz): Bitboard of all other pieces on the board
+
+    Returns:
+        generator for all bishop moves gives 3 tuples (from, to, promote)
+    '''
+    while bishop_bitboard:
+        bishop_square = bit_scan1(bishop_bitboard)
+        attack_bitboard = bishop_sliding(bishop_square, all_pieces)
+        bishop_bitboard = bishop_bitboard.bit_clear(bishop_square)
+        moveset = attack_bitboard & invert_bitboard(own_pieces)
+        yield from yield_moveset(bishop_square, moveset)
 
 
-# blockers = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
-# blockers[21] = 1
-# blockers[23] = 1
-#
-#
-#
-# empty = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
-#
-# print_bitboard(blockers)
-# print()
-#
-# # print_bitboard(rook_sliding(17, blockers))
-# # print()
-# # print_bitboard(rook_sliding(45, blockers))
-# # print()
-# # print_bitboard(rook_sliding(7, blockers))
-# # print()
-# # print_bitboard(rook_sliding(22, blockers))
-#
-# # print_bitboard(bishop_sliding(28, blockers))
-# # print()
-# # print_bitboard(bishop_sliding(45, blockers))
-# # print()
-# # print_bitboard(bishop_sliding(7, blockers))
-# # print()
-# # print_bitboard(bishop_sliding(22, blockers))
-#
-# print_bitboard(queen_sliding(28, blockers))
-# print()
-# print_bitboard(queen_sliding(45, blockers))
-# print()
-# print_bitboard(queen_sliding(7, blockers))
-# print()
-# print_bitboard(queen_sliding(22, blockers))
-#
-#
+def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
+    '''
+    generate rook moves
 
-#rook_sliding(17, empty, blockers)
-#print()
-#rook_sliding(17, blockers, empty)
+    Args:
+        rook_bitboard (xmpz): Bitboard of positions of rooks
+        all_pieces (xmpz): Bitboard of all other pieces on the board
+
+    Returns:
+        generator for all rook moves gives 3 tuples (from, to, promote)
+    '''
+    while rook_bitboard:
+        rook_square = bit_scan1(rook_bitboard)
+        attack_bitboard = rook_sliding(rook_square, all_pieces)
+        rook_bitboard = rook_bitboard.bit_clear(rook_square)
+        moveset = attack_bitboard & invert_bitboard(own_pieces)
+        yield from yield_moveset(rook_square, moveset)
+
+
+def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
+    '''
+    generate queen moves
+
+    Args:
+        queen_bitboard (xmpz): Bitboard of positions of queens
+        all_pieces (xmpz): Bitboard of all other pieces on the board
+
+    Returns:
+        generator for all queen moves gives 3 tuples (from, to, promote)
+    '''
+    while queen_bitboard:
+        queen_square = bit_scan1(queen_bitboard)
+        attack_bitboard = queen_sliding(queen_square, all_pieces)
+        queen_bitboard = queen_bitboard.bit_clear(queen_square)
+        moveset = attack_bitboard & invert_bitboard(own_pieces)
+        yield from yield_moveset(queen_square, moveset)
