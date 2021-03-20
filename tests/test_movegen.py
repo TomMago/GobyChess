@@ -90,3 +90,14 @@ class BoardTests(unittest.TestCase):
                                                    self.board.all_pieces_white)))
 
         self.assertEqual(white_moves, 12)
+
+    def test_gen_pawn_moves_white(self):
+        white_moves = len(list(mvg.gen_pawn_moves_white(self.board.pieces[1][0]
+                                                        , self.board)))
+        self.assertEqual(white_moves, 9)
+
+
+    def test_gen_pawn_moves_black(self):
+        black_moves = len(list(mvg.gen_pawn_moves_black(self.board.pieces[0][0]
+                                                        , self.board)))
+        self.assertEqual(black_moves, 11)

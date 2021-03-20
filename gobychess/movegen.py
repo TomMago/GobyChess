@@ -2,13 +2,99 @@
 
 from gmpy2 import bit_scan1, xmpz, bit_clear
 
-from .utils import print_bitboard, reverse_bit_scan1, invert_bitboard
+from .utils import print_bitboard, reverse_bit_scan1, invert_bitboard, bitboard_of_index
 
 
 def generate_non_sliding():
-    move_table = {'pawn white': [], 'pawn black': [], 'knight': [], 'king': []}
+    move_table = {'pawn white capture': [], 'pawn black capture': [],
+                  'pawn white move': [], 'pawn black move': [],
+                  'knight': [], 'king': []}
+
     move_table['knight'] = generate_knight()
     move_table['king'] = generate_king()
+    move_table['pawn white move'] = generate_white_pawn_move()
+    move_table['pawn white capture'] = generate_white_pawn_capture()
+    move_table['pawn black move'] = generate_black_pawn_move()
+    move_table['pawn black capture'] = generate_black_pawn_capture()
+    return move_table
+
+def generate_white_pawn_move():
+    '''
+    Generate all non capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        if i <= 7 or i >= 56:
+            pass
+        elif i // 8 == 1:
+            attack_board[i + 8] = 1
+            attack_board[i + 16] = 1
+        else:
+            attack_board[i + 8] = 1
+        moves.append(attack_board)
+    return moves
+
+def generate_white_pawn_capture():
+    '''
+    Generate all capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        if i > 7 and i < 56:
+            if (i % 8) != 0:
+                attack_board[i + 7] = 1
+            if (i + 1) % 8 != 0:
+                attack_board[i + 9] = 1
+        moves.append(attack_board)
+    return moves
+
+
+def generate_black_pawn_move():
+    '''
+    Generate all non capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        if i <= 7 or i >= 56:
+            pass
+        elif i // 8 == 6:
+            attack_board[i - 8] = 1
+            attack_board[i - 16] = 1
+        else:
+            attack_board[i - 8] = 1
+        moves.append(attack_board)
+    return moves
+
+def generate_black_pawn_capture():
+    '''
+    Generate all capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (xmpz array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        if i > 7 and i < 56:
+            if (i % 8) != 0:
+                attack_board[i - 9] = 1
+            if (i + 1) % 8 != 0:
+                attack_board[i - 7] = 1
+        moves.append(attack_board)
+    return moves
+
 
 
 def generate_king():
@@ -159,6 +245,7 @@ def generate_direction(direction):
 
 
 table = generate_table()
+non_sliding = generate_non_sliding()
 
 
 def rook_sliding(square, blockers):
@@ -256,6 +343,17 @@ def yield_moveset(square, moveset):
         moveset = moveset.bit_clear(index_to)
 
 
+def yield_promotion_moveset(square, moveset):
+    '''
+    yield all moves of a piece from one square to all squares on a bitboard
+    '''
+    while moveset:
+        index_to = bit_scan1(moveset)
+        for i in [1, 2, 3, 4]:
+            yield (square, index_to, i)
+        moveset = moveset.bit_clear(index_to)
+
+
 def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
     '''
     generate bishop moves
@@ -311,3 +409,53 @@ def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
         queen_bitboard = queen_bitboard.bit_clear(queen_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(queen_square, moveset)
+
+
+def gen_pawn_moves_white(pawn_bitboard, board):
+    seventhrow = xmpz(0b0000000011111111000000000000000000000000000000000000000000000000)
+    pawns = pawn_bitboard & invert_bitboard(seventhrow)
+    while(pawns):
+        pawn_square = bit_scan1(pawns)
+        yield from yield_moveset(pawn_square,
+                                 non_sliding['pawn white move'][pawn_square]
+                                 & invert_bitboard(board.all_pieces))
+        yield from yield_moveset(pawn_square,
+                                 non_sliding['pawn white capture'][pawn_square]
+                                 & (board.all_pieces_black | board.en_passant))
+        pawns = pawns.bit_clear(pawn_square)
+
+    pawns_seventh = pawn_bitboard & seventhrow
+    while(pawns_seventh):
+        pawn_square = bit_scan1(pawns_seventh)
+        yield from yield_promotion_moveset(pawn_square,
+                                           non_sliding['pawn white move'][pawn_square]
+                                           & invert_bitboard(board.all_pieces))
+        yield from yield_promotion_moveset(pawn_square,
+                                           non_sliding['pawn white capture'][pawn_square]
+                                           & board.all_pieces_black)
+        pawns_seventh = pawns_seventh.bit_clear(pawn_square)
+
+
+def gen_pawn_moves_black(pawn_bitboard, board):
+    secondrow = xmpz(0b0000000000000000000000000000000000000000000000001111111100000000)
+    pawns = pawn_bitboard & invert_bitboard(secondrow)
+    while(pawns):
+        pawn_square = bit_scan1(pawns)
+        yield from yield_moveset(pawn_square,
+                                 non_sliding['pawn black move'][pawn_square]
+                                 & invert_bitboard(board.all_pieces))
+        yield from yield_moveset(pawn_square,
+                                 non_sliding['pawn black capture'][pawn_square]
+                                 & (board.all_pieces_white | board.en_passant))
+        pawns = pawns.bit_clear(pawn_square)
+
+    pawns_second = pawn_bitboard & secondrow
+    while(pawns_second):
+        pawn_square = bit_scan1(pawns_second)
+        yield from yield_promotion_moveset(pawn_square,
+                                           non_sliding['pawn black move'][pawn_square]
+                                           & invert_bitboard(board.all_pieces))
+        yield from yield_promotion_moveset(pawn_square,
+                                           non_sliding['pawn black capture'][pawn_square]
+                                           & board.all_pieces_white)
+        pawns_second = pawns_second.bit_clear(pawn_square)

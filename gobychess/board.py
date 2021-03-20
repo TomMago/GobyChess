@@ -5,7 +5,7 @@ import itertools
 from gmpy2 import xmpz
 
 from .movegen import generate_table
-from .utils import print_bitboard
+from .utils import print_bitboard, bitboard_of_square
 
 
 class Board():
@@ -30,7 +30,7 @@ class Board():
         self.white_queenside = 1
         self.black_kingside = 1
         self.black_queenside = 1
-        self.en_passent = None
+        self.en_passant = None
         self.halfmove_clock = 0
         self.fullmove_counter = 1
 
@@ -74,9 +74,9 @@ class Board():
             self.black_queenside = 0
 
         if words[3] == '-':
-            self.en_passent = None
+            self.en_passant = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
         else:
-            self.en_passent = words[3]
+            self.en_passant = bitboard_of_square(words[3])
 
         self.halfmove_clock = int(words[4])
         self.fullmove_counter = int(words[5])
@@ -137,7 +137,7 @@ class Board():
 
         return "To move: {}\n{}\nEn passent square: \
                 {}\nmoves played: {}".format(self.to_move, board_str,
-                                             self.en_passent, self.fullmove_counter)
+                                             self.en_passant, self.fullmove_counter)
 
     def gen_moves(self):
         pass

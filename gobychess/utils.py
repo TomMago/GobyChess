@@ -28,6 +28,21 @@ def reverse_bit_scan1(bitboard):
     return length - 1
 
 
+def bitboard_of_index(index):
+    '''
+    bitboard from index of square
+
+    Args:
+        index (ind): Square index 0 - 64
+
+    Returns:
+        xmpz: bitboard with bit at idnex set to 1
+    '''
+    empty_bitboard = xmpz(0b00000000000000000000000000000000000000000000000000000000000000000)
+    empty_bitboard[index] = 1
+    return empty_bitboard
+
+
 def index_of_square(square):
     '''
     Index of square

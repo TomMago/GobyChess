@@ -19,7 +19,7 @@ class BoardTests(unittest.TestCase):
         self.assertEqual(self.board.white_queenside, 0)
         self.assertEqual(self.board.black_kingside, 0)
         self.assertEqual(self.board.black_queenside, 1)
-        self.assertEqual(self.board.en_passent, None)
+        self.assertEqual(self.board.en_passant, xmpz(0))
         self.assertEqual(self.board.halfmove_clock, 2)
         self.assertEqual(self.board.fullmove_counter, 10)
         self.assertEqual(self.board.pieces[0][0],
