@@ -14,7 +14,7 @@ class BoardTests(unittest.TestCase):
         self.board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
 
     def test_from_fen(self):
-        self.assertEqual(self.board.to_move, 'b')
+        self.assertEqual(self.board.to_move, 0)
         self.assertEqual(self.board.white_kingside, 0)
         self.assertEqual(self.board.white_queenside, 0)
         self.assertEqual(self.board.black_kingside, 0)
