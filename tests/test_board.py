@@ -5,7 +5,7 @@ import unittest
 from gmpy2 import xmpz
 
 from gobychess.board import Board
-from gobychess.utils import bitboard_of_square
+from gobychess.utils import bitboard_of_square, print_bitboard, index_of_square
 
 
 class BoardTests(unittest.TestCase):
@@ -47,3 +47,22 @@ class BoardTests(unittest.TestCase):
                          bitboard_of_square('a4'))
         self.assertEqual(self.board.pieces[1][5],
                          bitboard_of_square('f1'))
+
+    def test_in_check_after_move(self):
+        self.assertEqual(self.board.in_check_after_move((52, 51, None)), False)
+        self.assertEqual(self.board.in_check_after_move((52, 53, None)), True)
+        self.assertEqual(self.board.in_check_after_move((60, 59, None)), False)
+        self.assertEqual(self.board.in_check_after_move((60, 51, None)), True)
+
+
+    def test_make_moves(self):
+        test_board = Board()
+        test_board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        test_board.make_move((index_of_square('e2'), index_of_square('e4'), None))
+        self.assertEqual(test_board.to_move, 0)
+        self.assertEqual(test_board.en_passant, 20)
+        self.assertEqual(test_board.piece_on(28), (1, 0))
+        self.assertEqual(test_board.piece_on(12), (None, None))
+        self.assertEqual(test_board.fullmove_counter, 1)
+        self.assertEqual(test_board.halfmove_clock, 0)
+        test_board.make_move((index_of_square('e7'), index_of_square('e5'), None))

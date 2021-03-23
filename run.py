@@ -22,14 +22,5 @@ board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10"
 
 #print(list(mvg.gen_bishop_moves(board.pieces[0][2], board.all_pieces, board.all_pieces_black)))
 
-#mvg.generate_king()
-print(list(mvg.gen_queen_moves(bitboard_of_index(24), board.all_pieces, board.all_pieces_color[1])))
-print(len(list(mvg.gen_queen_moves(bitboard_of_index(24), board.all_pieces, board.all_pieces_color[1]))))
-print_bitboard(mvg.table['north east'][60])
-print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-board.test()
-#print(board.in_check())
-#print(mvg.bishop_sliding(24, board.all_pieces))
-print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-print(len(list(mvg.gen_queen_moves(bitboard_of_index(24), board.all_pieces, board.all_pieces_color[1]))))
-print_bitboard(mvg.table['north east'][60])
+print(len(list(board.gen_legal_moves())))
+print(list(board.gen_legal_moves()))

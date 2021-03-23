@@ -146,14 +146,11 @@ class MovegenTests(unittest.TestCase):
         self.assertEqual(mvg.check_piece_move(5, 60, 59, self.board), True)
         self.assertEqual(mvg.check_piece_move(5, 60, 52, self.board), False)
 
-
-
-    #def test_in_check(self):
-    #    self.assertEqual(self.board.in_check(), True)
-    #    self.board.to_move = 1
-    #    self.assertEqual(self.board.in_check(), False)
-    #    self.board.to_move = 0
-
+    def test_in_check(self):
+        self.assertEqual(self.board.in_check(), True)
+        self.board.to_move = 1
+        self.assertEqual(self.board.in_check(), False)
+        self.board.to_move = 0
 
     def test_generate_moves(self):
         self.assertEqual(len(list(mvg.generate_moves(self.board))), 54)

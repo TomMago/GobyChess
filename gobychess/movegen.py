@@ -241,6 +241,7 @@ def generate_direction(direction):
 
     return directions
 
+print("GENERATED")
 table = generate_table()
 non_sliding = generate_non_sliding()
 
@@ -291,9 +292,9 @@ def bishop_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = table['north east'][square]
+    attacks = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+    attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
-
         idx = bit_scan1(table['north east'][square] & blockers)
         attacks = attacks & invert_bitboard(table['north east'][idx])
 
@@ -331,18 +332,7 @@ def queen_sliding(square, blockers):
     return attacks
 
 
-def color_in_check(color, board):
-    # TODO add pawn checks
-    king_square = bit_scan1(board.pieces[0][5])
-    if non_sliding['knight'][king_square] & board.pieces[1][1]:
-        return True
-    if bishop_sliding(king_square, board.all_pieces) & board.pieces[1][2]:
-        return True
-    if rook_sliding(king_square, board.all_pieces) & board.pieces[1][3]:
-        return True
-    if queen_sliding(king_square, board.all_pieces) & board.pieces[1][4]:
-        return True
-    return False
+
 
 def yield_moveset(square, moveset):
     '''
@@ -437,9 +427,10 @@ def gen_pawn_moves_white(pawn_bitboard, board):
     pawns = pawn_bitboard & invert_bitboard(seventhrow)
     while(pawns):
         pawn_square = bit_scan1(pawns)
-        yield from yield_moveset(pawn_square,
-                                 non_sliding['pawn white move'][pawn_square]
-                                 & invert_bitboard(board.all_pieces))
+        if not board.all_pieces[pawn_square + 8]:
+            yield from yield_moveset(pawn_square,
+                                     non_sliding['pawn white move'][pawn_square]
+                                     & invert_bitboard(board.all_pieces))
         yield from yield_moveset(pawn_square,
                                  non_sliding['pawn white capture'][pawn_square]
                                  & (board.all_pieces_color[0] | board.en_passant))
@@ -472,9 +463,10 @@ def gen_pawn_moves_black(pawn_bitboard, board):
     pawns = pawn_bitboard & invert_bitboard(secondrow)
     while(pawns):
         pawn_square = bit_scan1(pawns)
-        yield from yield_moveset(pawn_square,
-                                 non_sliding['pawn black move'][pawn_square]
-                                 & invert_bitboard(board.all_pieces))
+        if not board.all_pieces[pawn_square - 8]:
+            yield from yield_moveset(pawn_square,
+                                     non_sliding['pawn black move'][pawn_square]
+                                     & invert_bitboard(board.all_pieces))
         yield from yield_moveset(pawn_square,
                                  non_sliding['pawn black capture'][pawn_square]
                                  & (board.all_pieces_color[1] | board.en_passant))
@@ -590,3 +582,17 @@ def generate_moves(board):
                                board.all_pieces_color[board.to_move])
     yield from gen_king_moves(board.pieces[board.to_move][5],
                               board.all_pieces_color[board.to_move])
+
+
+def color_in_check(color_to_move, board):
+    # TODO add pawn checks
+    king_square = bit_scan1(board.pieces[color_to_move][5])
+    if non_sliding['knight'][king_square] & board.pieces[1 - color_to_move][1]:
+        return True
+    if bishop_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][2]:
+        return True
+    if rook_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][3]:
+        return True
+    if queen_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][4]:
+        return True
+    return False
