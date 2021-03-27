@@ -3,9 +3,9 @@
 import unittest
 
 from gmpy2 import xmpz
-
 from gobychess.board import Board
-from gobychess.utils import bitboard_of_square, print_bitboard, index_of_square
+from gobychess.utils import (bitboard_of_index, bitboard_of_square,
+                             index_of_square, print_bitboard)
 
 
 class BoardTests(unittest.TestCase):
@@ -15,10 +15,10 @@ class BoardTests(unittest.TestCase):
 
     def test_from_fen(self):
         self.assertEqual(self.board.to_move, 0)
-        self.assertEqual(self.board.white_kingside, 0)
-        self.assertEqual(self.board.white_queenside, 0)
-        self.assertEqual(self.board.black_kingside, 0)
-        self.assertEqual(self.board.black_queenside, 1)
+        self.assertEqual(self.board.castling_rights['white kingside'], 0)
+        self.assertEqual(self.board.castling_rights['white queenside'], 0)
+        self.assertEqual(self.board.castling_rights['black kingside'], 0)
+        self.assertEqual(self.board.castling_rights['black queenside'], 1)
         self.assertEqual(self.board.en_passant, xmpz(0))
         self.assertEqual(self.board.halfmove_clock, 2)
         self.assertEqual(self.board.fullmove_counter, 10)
@@ -58,11 +58,42 @@ class BoardTests(unittest.TestCase):
     def test_make_moves(self):
         test_board = Board()
         test_board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-        test_board.make_move((index_of_square('e2'), index_of_square('e4'), None))
+        #print("e2e4")
+        test_board.make_generated_move((index_of_square('e2'), index_of_square('e4'), None))
         self.assertEqual(test_board.to_move, 0)
-        self.assertEqual(test_board.en_passant, 20)
+        #self.assertEqual(test_board.en_passant, 20)
         self.assertEqual(test_board.piece_on(28), (1, 0))
         self.assertEqual(test_board.piece_on(12), (None, None))
         self.assertEqual(test_board.fullmove_counter, 1)
         self.assertEqual(test_board.halfmove_clock, 0)
-        test_board.make_move((index_of_square('e7'), index_of_square('e5'), None))
+        #print("d7d5")
+        test_board.make_generated_move((index_of_square('d7'), index_of_square('d5'), None))
+        #print("e4e5")
+        test_board.make_generated_move((index_of_square('e4'), index_of_square('e5'), None))
+        #print("f7f5")
+        test_board.make_generated_move((index_of_square('f7'), index_of_square('f5'), None))
+
+
+
+        test_board = Board()
+        test_board.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1")
+        print(test_board.castling_rights)
+        print(len(list(test_board.gen_legal_moves())))
+        print((list(test_board.gen_legal_moves())))
+        print("========")
+        test_board.make_generated_move((index_of_square('a2'), index_of_square('a4'), None))
+        test_board.make_generated_move((index_of_square('b4'), index_of_square('a3'), None))
+        print(test_board.castling_rights)
+        print(len(list(test_board.gen_legal_moves())))
+        print((list(test_board.gen_legal_moves())))
+        print("========")
+
+
+
+        #moves = list(test_board.gen_legal_moves())
+        #for move in moves:
+        #    print(move)
+        #    print_bitboard(bitboard_of_index(move[0]) | bitboard_of_index(move[1]))
+        #    print()
+        #print(len(list(test_board.gen_legal_moves())))
+        #self.assertEqual(0, 1)

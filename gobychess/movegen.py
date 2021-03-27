@@ -28,7 +28,7 @@ def generate_white_pawn_move():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        attack_board = xmpz(0b0)
         if i <= 7 or i >= 56:
             pass
         elif i // 8 == 1:
@@ -48,8 +48,8 @@ def generate_white_pawn_capture():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
-        if i > 7 and i < 56:
+        attack_board = xmpz(0b0)
+        if i < 56:
             if (i % 8) != 0:
                 attack_board[i + 7] = 1
             if (i + 1) % 8 != 0:
@@ -67,7 +67,7 @@ def generate_black_pawn_move():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        attack_board = xmpz(0b0)
         if i <= 7 or i >= 56:
             pass
         elif i // 8 == 6:
@@ -87,8 +87,8 @@ def generate_black_pawn_capture():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
-        if i > 7 and i < 56:
+        attack_board = xmpz(0b0)
+        if i > 7:
             if (i % 8) != 0:
                 attack_board[i - 9] = 1
             if (i + 1) % 8 != 0:
@@ -107,7 +107,7 @@ def generate_king():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        attack_board = xmpz(0b0)
         if (i + 1) % 8 != 0:
             attack_board[i + 1] = 1
         if i % 8 != 0:
@@ -137,7 +137,7 @@ def generate_knight():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        attack_board = xmpz(0b0)
 
         possible_directions = []
         if i % 8 > 0:
@@ -205,7 +205,7 @@ def generate_direction(direction):
     directions = []
     for i in range(64):
         field_count = i
-        attack_board = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+        attack_board = xmpz(0b0)
         attack_board[i] = 0
 
         if direction == +8:
@@ -241,7 +241,6 @@ def generate_direction(direction):
 
     return directions
 
-print("GENERATED")
 table = generate_table()
 non_sliding = generate_non_sliding()
 
@@ -257,8 +256,8 @@ def rook_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-
-    attacks = table['east'][square]
+    attacks = xmpz(0b0)
+    attacks |= table['east'][square]
     if table['east'][square] & blockers:
         idx = bit_scan1(table['east'][square] & blockers)
         attacks = attacks & invert_bitboard(table['east'][idx])
@@ -292,7 +291,7 @@ def bishop_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = xmpz(0b0000000000000000000000000000000000000000000000000000000000000000)
+    attacks = xmpz(0b0)
     attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
         idx = bit_scan1(table['north east'][square] & blockers)
@@ -567,8 +566,16 @@ def check_piece_move(piecetype, from_square, to_square, board):
 def generate_moves(board):
     if board.to_move:
         yield from gen_pawn_moves_white(board.pieces[board.to_move][0], board)
+        if check_white_castle_kingside(board):
+            yield (4, 6, None)
+        if check_white_castle_queenside(board):
+            yield (4, 2, None)
     else:
         yield from gen_pawn_moves_black(board.pieces[board.to_move][0], board)
+        if check_black_castle_kingside(board):
+            yield (60, 62, None)
+        if check_black_castle_queenside(board):
+            yield (60, 58, None)
     yield from gen_knight_moves(board.pieces[board.to_move][1],
                                 board.all_pieces_color[board.to_move])
     yield from gen_bishop_moves(board.pieces[board.to_move][2],
@@ -584,15 +591,174 @@ def generate_moves(board):
                               board.all_pieces_color[board.to_move])
 
 
-def color_in_check(color_to_move, board):
-    # TODO add pawn checks
-    king_square = bit_scan1(board.pieces[color_to_move][5])
-    if non_sliding['knight'][king_square] & board.pieces[1 - color_to_move][1]:
+def color_in_check(board):
+    '''
+    check if color to move is in check.
+    '''
+    king_square = bit_scan1(board.pieces[board.to_move][5])
+
+    opponent_color = 1 - board.to_move
+
+    if non_sliding['knight'][king_square] & board.pieces[opponent_color][1]:
         return True
-    if bishop_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][2]:
+    if bishop_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][2]:
         return True
-    if rook_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][3]:
+    if rook_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][3]:
         return True
-    if queen_sliding(king_square, board.all_pieces) & board.pieces[1 - color_to_move][4]:
+    if queen_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][4]:
         return True
+    if board.to_move:
+        if non_sliding['pawn white capture'][king_square] & board.pieces[opponent_color][0]:
+            return True
+    else:
+        if non_sliding['pawn black capture'][king_square] & board.pieces[opponent_color][0]:
+            return True
     return False
+
+
+def check_white_castle_kingside(board):
+    '''check if black can castle kingside
+
+    Args:
+        board (Board): current board
+
+    Returns:
+        bool: if castling is possible
+    '''
+
+    if not board.castling_rights['white kingside']:
+        return False
+
+    if board.all_pieces[5] == 1 or board.all_pieces[6] == 1:
+        return False
+
+    if board.in_check():
+        return False
+
+    tmp_board = board.board_copy()
+
+    for i in [5, 6]:
+
+        tmp_board.pieces[1][5][i-1] = 0
+        tmp_board.pieces[1][5][i] = 1
+
+        tmp_board.all_pieces[i-1] = 0
+        tmp_board.all_pieces[i] = 1
+
+        tmp_board.all_pieces_color[1][i-1] = 0
+        tmp_board.all_pieces_color[1][i] = 1
+
+        if tmp_board.in_check():
+            return False
+
+    return True
+
+
+def check_white_castle_queenside(board):
+    '''check if black can castle kingside
+
+    Args:
+        board (Board): current board
+
+    Returns:
+        bool: if castling is possible
+    '''
+
+    if not board.castling_rights['white queenside']:
+        return False
+
+    if board.all_pieces[3] == 1 or board.all_pieces[2] == 1 or board.all_pieces[1] == 1:
+        return False
+
+    if board.in_check():
+        return False
+
+    tmp_board = board.board_copy()
+
+    for i in [3, 2]:
+        tmp_board.pieces[1][5][i+1] = 0
+        tmp_board.pieces[1][5][i] = 1
+
+        tmp_board.all_pieces[i+1] = 0
+        tmp_board.all_pieces[i] = 1
+
+        tmp_board.all_pieces_color[1][i+1] = 0
+        tmp_board.all_pieces_color[1][i] = 1
+
+        if tmp_board.in_check():
+            return False
+
+    return True
+
+
+def check_black_castle_kingside(board):
+    '''check if black can castle kingside
+
+    Args:
+        board (Board): current board
+
+    Returns:
+        bool: if castling is possible
+    '''
+    if not board.castling_rights['black kingside']:
+        return False
+
+    if board.all_pieces[61] == 1 or board.all_pieces[62] == 1:
+        return False
+
+    if board.in_check():
+        return False
+
+    tmp_board = board.board_copy()
+
+    for i in [61, 62]:
+
+        tmp_board.pieces[0][5][i-1] = 0
+        tmp_board.pieces[0][5][i] = 1
+
+        tmp_board.all_pieces[i-1] = 0
+        tmp_board.all_pieces[i] = 1
+
+        tmp_board.all_pieces_color[0][i-1] = 0
+        tmp_board.all_pieces_color[0][i] = 1
+
+        if tmp_board.in_check():
+            return False
+
+    return True
+
+
+def check_black_castle_queenside(board):
+    '''check if black can castle kingside
+
+    Args:
+        board (Board): current board
+
+    Returns:
+        bool: if castling is possible
+    '''
+    if not board.castling_rights['black queenside']:
+        return False
+
+    if board.all_pieces[59] == 1 or board.all_pieces[58] == 1 or board.all_pieces[57] == 1:
+        return False
+
+    if board.in_check():
+        return False
+
+    tmp_board = board.board_copy()
+
+    for i in [59, 58]:
+        tmp_board.pieces[0][5][i+1] = 0
+        tmp_board.pieces[0][5][i] = 1
+
+        tmp_board.all_pieces[i+1] = 0
+        tmp_board.all_pieces[i] = 1
+
+        tmp_board.all_pieces_color[0][i+1] = 0
+        tmp_board.all_pieces_color[0][i] = 1
+
+        if tmp_board.in_check():
+            return False
+
+    return True
