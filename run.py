@@ -45,18 +45,27 @@ from gobychess.utils import print_bitboard, invert_bitboard, bitboard_of_index
 # print("std: " + str(np.std(res)))
 
 def perft(current_board, depth):
-        number_moves = 0
-        if not depth:
-            return 1
-        for move in current_board.gen_legal_moves():
-            new_board = current_board.board_copy()
-            new_board = new_board.make_generated_move(move)
-            number_moves += perft(new_board, depth - 1)
-        return number_moves
+    number_moves = 0
+    if not depth:
+        return 1
+    for move in current_board.gen_legal_moves():
+        new_board = current_board.board_copy()
+        new_board = new_board.make_generated_move(move)
+        number_moves += perft(new_board, depth - 1)
+    return number_moves
 
 import cProfile
 
 board = Board()
-board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
+board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+#board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
 
-cProfile.run('perft(board, 4)')
+#cProfile.run('perft(board, 3)')
+
+import time
+
+start = time.time()
+perft(board, 3)
+end = time.time()
+
+print(end - start)

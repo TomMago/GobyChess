@@ -20,5 +20,7 @@ test-make-cov:
 benchmark:
 	python -m py.test --benchmark-columns=min,max,mean,stddev --benchmark-sort=mean benchmarks
 
+profile:
+	python profiles/*.py
 
 # end

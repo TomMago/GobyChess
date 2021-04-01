@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
-from gmpy2 import bit_scan1, xmpz, bit_clear
+from gmpy2 import bit_clear, bit_scan1, xmpz
 
-from .utils import print_bitboard, reverse_bit_scan1, invert_bitboard, bitboard_of_index
-
+from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
+                    reverse_bit_scan1)
 
 
 def generate_non_sliding():
+    '''
+    Generate Table for non slide move lookup
+
+    Returns:
+        dict: dict containing moves for every square for pawn white capture,
+              pawn black capture, pawn white move, pawn black move,
+              knight and the king
+    '''
     non_sliding_table = {'pawn white capture': [], 'pawn black capture': [],
                   'pawn white move': [], 'pawn black move': [],
                   'knight': [], 'king': []}
@@ -18,6 +26,7 @@ def generate_non_sliding():
     non_sliding_table['pawn black move'] = generate_black_pawn_move()
     non_sliding_table['pawn black capture'] = generate_black_pawn_capture()
     return non_sliding_table
+
 
 def generate_white_pawn_move():
     '''
@@ -38,6 +47,7 @@ def generate_white_pawn_move():
             attack_board[i + 8] = 1
         moves.append(attack_board)
     return moves
+
 
 def generate_white_pawn_capture():
     '''
@@ -78,6 +88,7 @@ def generate_black_pawn_move():
         moves.append(attack_board)
     return moves
 
+
 def generate_black_pawn_capture():
     '''
     Generate all capturing pawn moves for white for every sqare
@@ -95,7 +106,6 @@ def generate_black_pawn_capture():
                 attack_board[i - 7] = 1
         moves.append(attack_board)
     return moves
-
 
 
 def generate_king():
@@ -241,6 +251,7 @@ def generate_direction(direction):
 
     return directions
 
+
 table = generate_table()
 non_sliding = generate_non_sliding()
 
@@ -329,8 +340,6 @@ def queen_sliding(square, blockers):
 
     attacks = rook_sliding(square, blockers) | bishop_sliding(square, blockers)
     return attacks
-
-
 
 
 def yield_moveset(square, moveset):
@@ -424,7 +433,7 @@ def gen_pawn_moves_white(pawn_bitboard, board):
     '''
     seventhrow = xmpz(0b0000000011111111000000000000000000000000000000000000000000000000)
     pawns = pawn_bitboard & invert_bitboard(seventhrow)
-    while(pawns):
+    while pawns:
         pawn_square = bit_scan1(pawns)
         if not board.all_pieces[pawn_square + 8]:
             yield from yield_moveset(pawn_square,
@@ -436,7 +445,7 @@ def gen_pawn_moves_white(pawn_bitboard, board):
         pawns = pawns.bit_clear(pawn_square)
 
     pawns_seventh = pawn_bitboard & seventhrow
-    while(pawns_seventh):
+    while pawns_seventh:
         pawn_square = bit_scan1(pawns_seventh)
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn white move'][pawn_square]
@@ -460,7 +469,7 @@ def gen_pawn_moves_black(pawn_bitboard, board):
     '''
     secondrow = xmpz(0b0000000000000000000000000000000000000000000000001111111100000000)
     pawns = pawn_bitboard & invert_bitboard(secondrow)
-    while(pawns):
+    while pawns:
         pawn_square = bit_scan1(pawns)
         if not board.all_pieces[pawn_square - 8]:
             yield from yield_moveset(pawn_square,
@@ -472,7 +481,7 @@ def gen_pawn_moves_black(pawn_bitboard, board):
         pawns = pawns.bit_clear(pawn_square)
 
     pawns_second = pawn_bitboard & secondrow
-    while(pawns_second):
+    while pawns_second:
         pawn_square = bit_scan1(pawns_second)
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn black move'][pawn_square]
@@ -481,6 +490,7 @@ def gen_pawn_moves_black(pawn_bitboard, board):
                                            non_sliding['pawn black capture'][pawn_square]
                                            & board.all_pieces_color[1])
         pawns_second = pawns_second.bit_clear(pawn_square)
+
 
 def gen_knight_moves(knight_bitboard, own_pieces):
     '''
@@ -499,6 +509,7 @@ def gen_knight_moves(knight_bitboard, own_pieces):
         knight_bitboard = knight_bitboard.bit_clear(knight_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(knight_square, moveset)
+
 
 def gen_king_moves(king_bitboard, own_pieces):
     '''
@@ -530,7 +541,7 @@ def check_piece_move(piecetype, from_square, to_square, board):
         board (Board): Board object
 
     Returns:
-        bool:
+        bool: True if move is possible, False if not
     '''
     piece_bitboard = bitboard_of_index(from_square)
     if piecetype == 0 and board.to_move == 0:
@@ -564,6 +575,12 @@ def check_piece_move(piecetype, from_square, to_square, board):
 
 
 def generate_moves(board):
+    '''
+    Generates all pseudo legal moves for the color to move
+
+    yields:
+        moves (tuple): all moves in the form (square_from, square_to, promotion)
+    '''
     if board.to_move:
         yield from gen_pawn_moves_white(board.pieces[board.to_move][0], board)
         if check_white_castle_kingside(board):
@@ -593,7 +610,10 @@ def generate_moves(board):
 
 def color_in_check(board):
     '''
-    check if color to move is in check.
+    checks if color to move is in check.
+
+    Returns:
+        bool: True if color to move is in check, False otherwise
     '''
     king_square = bit_scan1(board.pieces[board.to_move][5])
 
