@@ -48,6 +48,19 @@ class Board():
         Args:
             String containing the fen position
         '''
+        self.pieces[0] = [xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0)]
+        self.pieces[1] = [xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0),
+                          xmpz(0b0)]
+
         words = fen.split()
 
         if words[1] == 'w':
@@ -55,11 +68,6 @@ class Board():
         else:
             self.to_move = 0
 
-        #if words[2] == '-':
-        #    self.castling_rights['white kingside'] = 0
-        #    self.castling_rights['white queenside'] = 0
-        #    self.castling_rights['black kingside'] = 0
-        #    self.castling_rights['black queenside'] = 0
         if 'K' in words[2]:
             self.castling_rights['white kingside'] = 1
         else:
@@ -137,7 +145,8 @@ class Board():
             x = board_str[i * 8:(i + 1) * 8]
             board_str[i * 8:(i + 1) * 8] = x[::-1]
             board_str[(i + 1) * 8 - 1] += '\n'
-        board_str = "".join(board_str)
+        board_str = " ".join(board_str)
+        board_str = " " + board_str
 
         return "To move: {}\n{}\nEn passent square: \
                 {}\nmoves played: {}".format(self.to_move, board_str,
@@ -255,14 +264,15 @@ class Board():
         else:
             self.en_passant = xmpz(0b0)
 
-        if move == (4, 6, None):
-            self.update_piece(1, 3, 7, 5)
-        elif move == (4, 2, None):
-            self.update_piece(1, 3, 0, 3)
-        elif move == (60, 62, None):
-            self.update_piece(0, 3, 63, 61)
-        elif move == (60, 58, None):
-            self.update_piece(0, 3, 56, 59)
+        if piece_to_move == 5:
+            if move == (4, 6, None):
+                self.update_piece(1, 3, 7, 5)
+            elif move == (4, 2, None):
+                self.update_piece(1, 3, 0, 3)
+            elif move == (60, 62, None):
+                self.update_piece(0, 3, 63, 61)
+            elif move == (60, 58, None):
+                self.update_piece(0, 3, 56, 59)
 
         # update casling rights
         if piece_to_move == 5:
@@ -273,15 +283,20 @@ class Board():
                 self.castling_rights['black kingside'] = 0
                 self.castling_rights['black queenside'] = 0
 
-        if piece_to_move == 3:
-            if square_from == 0:
-                self.castling_rights['white queenside'] = 0
-            elif square_from == 7:
-                self.castling_rights['white kingside'] = 0
-            elif square_from == 56:
-                self.castling_rights['black queenside'] = 0
-            elif square_from == 63:
-                self.castling_rights['black kingside'] = 0
+        if square_from == 0 or square_to == 0:
+            self.castling_rights['white queenside'] = 0
+        elif square_from == 7 or square_to == 7:
+            self.castling_rights['white kingside'] = 0
+        elif square_from == 56 or square_to == 56:
+            self.castling_rights['black queenside'] = 0
+        elif square_from == 63 or square_to == 63:
+            self.castling_rights['black kingside'] = 0
+
+
+        if promotion:
+            # REVIEW rather without update of square_to
+            self.update_piece(self.to_move, promotion, square_from, square_to)
+            self.pieces[self.to_move][0][square_to] = 0
 
         # if self.all_pieces_color[1 - self.to_move][square_to]:
         #     self.halfmove_clock = 0
@@ -369,6 +384,8 @@ class Board():
             else:
                 pawn_square = square_to + 8
 
+
+            tmp_board.pieces[1 - tmp_board.to_move][0][pawn_square] = 0
             tmp_board.all_pieces_color[1 - tmp_board.to_move][pawn_square] = 0
             tmp_board.all_pieces[pawn_square] = 0
 

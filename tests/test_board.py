@@ -66,30 +66,14 @@ class BoardTests(unittest.TestCase):
         self.assertEqual(test_board.piece_on(12), (None, None))
         self.assertEqual(test_board.fullmove_counter, 1)
         self.assertEqual(test_board.halfmove_clock, 0)
-        #print("d7d5")
-        test_board.make_generated_move((index_of_square('d7'), index_of_square('d5'), None))
-        #print("e4e5")
-        test_board.make_generated_move((index_of_square('e4'), index_of_square('e5'), None))
-        #print("f7f5")
-        test_board.make_generated_move((index_of_square('f7'), index_of_square('f5'), None))
-
 
 
         test_board = Board()
-        test_board.from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 1 1")
-        print(test_board.castling_rights)
+        test_board.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
+        test_board.make_generated_move((index_of_square('a2'), index_of_square('a3'), None))
+        test_board.make_generated_move((index_of_square('f2'), index_of_square('h1'), None))
         print(len(list(test_board.gen_legal_moves())))
-        print((list(test_board.gen_legal_moves())))
-        print("========")
-        test_board.make_generated_move((index_of_square('a2'), index_of_square('a4'), None))
-        test_board.make_generated_move((index_of_square('b4'), index_of_square('a3'), None))
-        print(test_board.castling_rights)
-        print(len(list(test_board.gen_legal_moves())))
-        print((list(test_board.gen_legal_moves())))
-        print("========")
-
-
-
+        print(list(test_board.gen_legal_moves()))
         #moves = list(test_board.gen_legal_moves())
         #for move in moves:
         #    print(move)
