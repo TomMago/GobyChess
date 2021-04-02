@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from gmpy2 import bit_clear, bit_scan1, xmpz
 
 from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
