@@ -8,6 +8,9 @@ from gobychess.utils import (bitboard_of_index, bitboard_of_square,
                              index_of_square, print_bitboard)
 
 
+import pytest
+
+
 class BoardTests(unittest.TestCase):
     def setUp(self):
         self.board = Board()
@@ -108,3 +111,30 @@ class BoardTests(unittest.TestCase):
         self.assertEqual(test_board.is_checkmate(), False)
         test_board.make_generated_move((index_of_square('f3'), index_of_square('f7'), None))
         self.assertEqual(test_board.is_checkmate(), True)
+
+    def test_is_stalemate(self):
+        test_board = Board()
+        test_board.from_fen("8/8/8/8/3k4/q7/2K5/8 w - - 0 1")
+        self.assertEqual(test_board.is_stalemate(), False)
+        test_board.make_generated_move((index_of_square('c2'), index_of_square('b1'), None))
+        self.assertEqual(test_board.is_stalemate(), False)
+        test_board.make_generated_move((index_of_square('d4'), index_of_square('c3'), None))
+        self.assertEqual(test_board.is_stalemate(), True)
+
+
+    def test_make_move(self):
+        test_board = Board()
+        test_board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
+        with pytest.raises(IndexError):
+            test_board.make_move((60, 68, None))
+        with pytest.raises(ValueError):
+            test_board.make_move((index_of_square('f7'), index_of_square('d7'), None))
+        with pytest.raises(ValueError):
+            test_board.make_move((index_of_square('e8'), index_of_square('d7'), None))
+        with pytest.raises(ValueError):
+            test_board.make_move((index_of_square('f6'), index_of_square('e4'), None))
+        with pytest.raises(ValueError):
+            test_board.make_move((index_of_square('e8'), index_of_square('g8'), None))
+        test_board.make_move((index_of_square('c7'), index_of_square('c6'), None))
+        with pytest.raises(ValueError):
+            test_board.make_move((index_of_square('a1'), index_of_square('a3'), None))

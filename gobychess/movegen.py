@@ -619,6 +619,8 @@ def color_in_check(board):
 
     opponent_color = 1 - board.to_move
 
+    if non_sliding['king'][king_square] & board.pieces[opponent_color][5]:
+        return True
     if non_sliding['knight'][king_square] & board.pieces[opponent_color][1]:
         return True
     if bishop_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][2]:

@@ -1,5 +1,5 @@
 '''
-Perft test cases, all positions and results taken from https://www.chessprogramming.org/Perft_Results
+Perft test cases, positions 1-6 taken from https://www.chessprogramming.org/Perft_Results
 '''
 
 import unittest
@@ -48,8 +48,6 @@ class PerftTests(unittest.TestCase):
         #self.assertEqual(self._perft(self.board, 5), 674_624)
         #self.assertEqual(self._perft(self.board, 6), 11_030_083)
 
-
-
     def test_perft_pos4(self):
         self.board.from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1")
         self.assertEqual(self._perft(self.board, 1), 6)
@@ -57,7 +55,6 @@ class PerftTests(unittest.TestCase):
         self.assertEqual(self._perft(self.board, 3), 9467)
         #self.assertEqual(self._perft(self.board, 4), 422_333)
         #self.assertEqual(self._perft(self.board, 5), 15_833_292)
-
 
     def test_perft_pos5(self):
         self.board.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
@@ -67,11 +64,16 @@ class PerftTests(unittest.TestCase):
         #self.assertEqual(self._perft(self.board, 4), 2_103_487)
         #self.assertEqual(self._perft(self.board, 5), 89_941_194)
 
-
-
     def test_perft_pos6(self):
         self.board.from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10")
         self.assertEqual(self._perft(self.board, 1), 46)
         self.assertEqual(self._perft(self.board, 2), 2079)
         #self.assertEqual(self._perft(self.board, 3), 89_890)
         #self.assertEqual(self._perft(self.board, 4), 3_894_594)
+
+    def test_perft_pos7(self):
+        self.board.from_fen("8/8/3rk3/8/8/2N1K3/8/8 w - - 0 1")
+        self.assertEqual(self._perft(self.board, 1), 13)
+        self.assertEqual(self._perft(self.board, 2), 205)
+        self.assertEqual(self._perft(self.board, 3), 2250)
+        #self.assertEqual(self._perft(self.board, 4), 40097)

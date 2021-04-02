@@ -2,8 +2,8 @@
 
 import gobychess
 
-DEPTH = 3
-ROUNDS = 30
+DEPTH = 4
+ROUNDS = 10
 
 def test_perft_base(benchmark):
     board = gobychess.Board()

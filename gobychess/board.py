@@ -173,13 +173,12 @@ class Board():
         '''
         # check if indices in bound
         square_from, square_to, promotion = move
+        color, piece_to_move = self.piece_on(square_from)
         if not 0 <= square_from <= 63 or not 0 <= square_to <= 63:
             raise IndexError("Square outside the Board")
         # check if a piece (and which) is on square from
         if not self.all_pieces[square_from]:
             raise ValueError("There is no piece on the square")
-        # on what square is it not 0
-        color, piece_to_move = self.piece_on(square_from)
         # check if piece can go to square to
         if not mvg.check_piece_move(piece_to_move, square_from, square_to, self):
             print(self)
@@ -188,36 +187,57 @@ class Board():
         if self.in_check_after_move(move):
             raise ValueError("You are in Check!")
 
-        capture = False
+        # update bbs for moving piece
+        self.update_piece(self.to_move, piece_to_move, square_from, square_to)
 
+        # check if move is capture:
         if self.all_pieces_color[1 - self.to_move][square_to]:
-            self.halfmove_clock = 0
-            capture = True
-        elif piece_to_move == 0:
-            self.halfmove_clock = 0
-        else:
-            self.halfmove_clock += 1
-
-        if capture:
             for i in range(5):
                 self.pieces[1 - self.to_move][i][square_to] = 0
+            self.all_pieces_color[1 - self.to_move][square_to] = 0
 
-        if not self.to_move:
-            self.fullmove_counter += 1
+        # set square of captured pawn
+        if self.to_move:
+            pawn_square = square_to - 8
+        else:
+            pawn_square = square_to + 8
 
-        self.pieces[self.to_move][piece_to_move][square_from] = 0
-        self.pieces[self.to_move][piece_to_move][square_to] = 1
-        self.update_all_pieces()
+        # if move is an en passant capture remove pawn
+        if piece_to_move == 0 and self.en_passant[square_to]:
+            self.pieces[1 - self.to_move][0][pawn_square] = 0
+            self.all_pieces_color[1 - self.to_move][pawn_square] = 0
+            self.all_pieces[pawn_square] = 0
 
+        # if pawn double move set en passent square
         if piece_to_move == 0 and abs(square_from - square_to) == 16:
-            if self.to_move:
-                self.en_passant = square_to - 8
-            else:
-                self.en_passant = square_to + 8
+            self.en_passant = bitboard_of_index(pawn_square)
+        else:
+            self.en_passant = xmpz(0b0)
+
+        # if castles update rook
+        if piece_to_move == 5:
+            if move == (4, 6, None):
+                self.update_piece(1, 3, 7, 5)
+            elif move == (4, 2, None):
+                self.update_piece(1, 3, 0, 3)
+            elif move == (60, 62, None):
+                self.update_piece(0, 3, 63, 61)
+            elif move == (60, 58, None):
+                self.update_piece(0, 3, 56, 59)
+
+        # update castling rights
+        self.update_castling_rights(move, piece_to_move)
+
+        # if move is promotion set new piece and remove pawn
+        if promotion:
+            # REVIEW rather without update of square_to
+            self.update_piece(self.to_move, promotion, square_from, square_to)
+            self.pieces[self.to_move][0][square_to] = 0
 
         self.to_move = 1 - self.to_move
 
         return self
+
 
     def make_generated_move(self, move):
         '''
@@ -290,7 +310,6 @@ class Board():
 
         return self
 
-
     def gen_legal_moves(self):
         '''
         Generates all legal moves for the color to move in the current position
@@ -343,7 +362,8 @@ class Board():
             Board: Copy of the current board state
         '''
         new_board = Board()
-        new_board.pieces = copy.deepcopy(self.pieces)
+        for color, piecetype in itertools.product(range(2), range(6)):
+            new_board.pieces[color][piecetype] = self.pieces[color][piecetype].copy()
         new_board.to_move = self.to_move
         new_board.en_passant = self.en_passant.copy()
         new_board.castling_rights = self.castling_rights.copy()
@@ -420,9 +440,20 @@ class Board():
         Check if color to move is checkmate
 
         Returns:
-            bool: True if it is Checkmate,False otherwise
+            bool: True if it is Checkmate, False otherwise
         '''
         if self.in_check() and not list(self.gen_legal_moves()):
+            return True
+        return False
+
+    def is_stalemate(self):
+        '''
+        Check if color to move is stalemate
+
+        Returns:
+            bool: True if stalemate, False otherwise
+        '''
+        if not self.in_check() and not list(self.gen_legal_moves()):
             return True
         return False
 
@@ -454,4 +485,3 @@ class Board():
             self.castling_rights['black queenside'] = 0
         elif square_from == 63 or square_to == 63:
             self.castling_rights['black kingside'] = 0
-        pass
