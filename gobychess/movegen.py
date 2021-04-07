@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+from numba import njit
+
 import numpy as np
 from gmpy2 import bit_clear, bit_scan1, xmpz
 
 from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
-                    reverse_bit_scan1)
+                    reverse_bit_scan)
 
 
 def generate_non_sliding():
@@ -28,7 +30,7 @@ def generate_non_sliding():
     non_sliding_table['pawn black capture'] = generate_black_pawn_capture()
     return non_sliding_table
 
-
+@njit
 def generate_white_pawn_move():
     '''
     Generate all non capturing pawn moves for white for every sqare
@@ -38,15 +40,18 @@ def generate_white_pawn_move():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = np.uint64(0b0)
         if i <= 7 or i >= 56:
             pass
         elif i // 8 == 1:
-            attack_board[i + 8] = 1
-            attack_board[i + 16] = 1
+            print(attack_board, type(attack_board))
+            print(bitboard_of_index(i + 8), type(bitboard_of_index(i + 8)))
+            attack_board |= bitboard_of_index(i + 8)
+            attack_board |= bitboard_of_index(i + 16)
         else:
-            attack_board[i + 8] = 1
+            attack_board |= bitboard_of_index(i + 8)
         moves.append(attack_board)
+        print_bitboard(attack_board)
     return moves
 
 

@@ -2,8 +2,10 @@
 
 from textwrap import wrap
 
+import numpy as np
 from gmpy2 import xmpz
 
+from numba import njit, jit
 
 def print_bitboard(board):
     '''
@@ -12,8 +14,17 @@ def print_bitboard(board):
     board = '{:064b}'.format(board)
     print('\n'.join([' '.join(wrap(line, 1))[::-1] for line in wrap(board, 8)]))
 
+@njit
+def bit_scan(bitboard):
+    '''
+    forward bitscan
+    '''
+    a = (2**np.arange(64) & bitboard)
+    lead_zeros = 64-a.argmax()-1
+    return 63 - lead_zeros
 
-def reverse_bit_scan1(bitboard):
+@njit
+def reverse_bit_scan(bitboard):
     '''
     Give index of most significant bit of xmpz bitboard
 
@@ -23,12 +34,14 @@ def reverse_bit_scan1(bitboard):
     Returns:
         index of most significant bit (int)
     '''
-    length = bitboard.bit_length()
-    if length == 0:
-        return None
-    return length - 1
+    a = (2**np.arange(64) & bitboard)
+    if bitboard == 0:
+        trail_zeros = 1
+    else:
+        trail_zeros = (a == 0).argmin()
+    return trail_zeros
 
-
+@njit
 def bitboard_of_index(index):
     '''
     bitboard from index of square
@@ -39,9 +52,8 @@ def bitboard_of_index(index):
     Returns:
         xmpz: bitboard with bit at idnex set to 1
     '''
-    empty_bitboard = xmpz(0b0)
-    empty_bitboard[index] = 1
-    return empty_bitboard
+    bitboard = np.uint64(2**index)
+    return bitboard
 
 
 def index_of_square(square):

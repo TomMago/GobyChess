@@ -50,8 +50,6 @@ class Board():
                                  xmpz(0b0)]
         self.all_pieces = xmpz(0b0)
 
-        self.update_all_pieces()
-
     def from_fen(self, fen):
         '''
         Set board to fen position
