@@ -126,3 +126,27 @@ def perft(current_board, depth):
         new_board = new_board.make_generated_move(move)
         number_moves += perft(new_board, depth - 1)
     return number_moves
+
+
+def print_move(move):
+    square_from, square_to, promotion = move
+
+    string = ""
+
+    row_from = str(square_from // 8 + 1)
+    line_from = chr(ord('a') + (square_from % 8))
+
+    row_to = str(square_to // 8 + 1)
+    line_to = chr(ord('a') + (square_to % 8))
+
+
+    string += line_from
+    string += row_from
+    string += line_to
+    string += row_to
+
+    if promotion:
+        string += "="
+        string += str(promotion)
+
+    return string
