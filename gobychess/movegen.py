@@ -530,7 +530,7 @@ def gen_king_moves(king_bitboard, own_pieces):
         yield from yield_moveset(king_square, moveset)
 
 
-def check_piece_move(piecetype, from_square, to_square, board):
+def check_piece_move(move, board):
     '''
     Check if move for piece is valid
 
@@ -543,33 +543,35 @@ def check_piece_move(piecetype, from_square, to_square, board):
     Returns:
         bool: True if move is possible, False if not
     '''
-    piece_bitboard = bitboard_of_index(from_square)
-    if piecetype == 0 and board.to_move == 0:
-        if (from_square, to_square, None) in gen_pawn_moves_black(piece_bitboard, board):
-            return True
-        if (from_square, to_square, 1) in gen_pawn_moves_black(piece_bitboard, board):
-            return True
-    if piecetype == 0 and board.to_move == 1:
-        if (from_square, to_square, None) in gen_pawn_moves_white(piece_bitboard, board):
-            return True
-        if (from_square, to_square, 1) in gen_pawn_moves_black(piece_bitboard, board):
-            return True
-    if piecetype == 1 and (from_square, to_square, None) in gen_knight_moves(piece_bitboard, board.all_pieces_color[board.to_move]):
-        return True
-    if piecetype == 2 and (from_square, to_square, None) in gen_bishop_moves(piece_bitboard,
-                                                                             board.all_pieces,
-                                                                             board.all_pieces_color[board.to_move]):
-        return True
-    if piecetype == 3 and (from_square, to_square, None) in gen_rook_moves(piece_bitboard,
-                                                                           board.all_pieces,
-                                                                           board.all_pieces_color[board.to_move]):
-        return True
-    if piecetype == 4 and (from_square, to_square, None) in gen_queen_moves(piece_bitboard,
-                                                                            board.all_pieces,
-                                                                            board.all_pieces_color[board.to_move]):
-        return True
-    if piecetype == 5 and (from_square, to_square, None) in gen_king_moves(piece_bitboard,
-                                                                           board.all_pieces_color[board.to_move]):
+    # piece_bitboard = bitboard_of_index(from_square)
+    # if piecetype == 0 and board.to_move == 0:
+    #     if (from_square, to_square, None) in gen_pawn_moves_black(piece_bitboard, board):
+    #         return True
+    #     if (from_square, to_square, 1) in gen_pawn_moves_black(piece_bitboard, board):
+    #         return True
+    # if piecetype == 0 and board.to_move == 1:
+    #     if (from_square, to_square, None) in gen_pawn_moves_white(piece_bitboard, board):
+    #         return True
+    #     if (from_square, to_square, 1) in gen_pawn_moves_black(piece_bitboard, board):
+    #         return True
+    # if piecetype == 1 and (from_square, to_square, None) in gen_knight_moves(piece_bitboard, board.all_pieces_color[board.to_move]):
+    #     return True
+    # if piecetype == 2 and (from_square, to_square, None) in gen_bishop_moves(piece_bitboard,
+    #                                                                          board.all_pieces,
+    #                                                                          board.all_pieces_color[board.to_move]):
+    #     return True
+    # if piecetype == 3 and (from_square, to_square, None) in gen_rook_moves(piece_bitboard,
+    #                                                                        board.all_pieces,
+    #                                                                        board.all_pieces_color[board.to_move]):
+    #     return True
+    # if piecetype == 4 and (from_square, to_square, None) in gen_queen_moves(piece_bitboard,
+    #                                                                         board.all_pieces,
+    #                                                                         board.all_pieces_color[board.to_move]):
+    #     return True
+    # if piecetype == 5 and (from_square, to_square, None) in gen_king_moves(piece_bitboard,
+    #                                                                        board.all_pieces_color[board.to_move]):
+    #     return True
+    if move in board.gen_legal_moves():
         return True
     return False
 

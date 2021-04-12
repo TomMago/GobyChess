@@ -128,7 +128,15 @@ def perft(current_board, depth):
     return number_moves
 
 
-def print_move(move):
+def promotion_from_char(piece_char):
+    piecetype_chars = {'n': 1, 'b': 2, 'r': 3, 'q': 4}
+    return piecetype_chars[piece_char]
+
+def promotion_from_piecetype(piecetype):
+    piecetypes = {1: 'n', 2: 'b', 3: 'r', 4: 'q'}
+    return piecetypes[piecetype]
+
+def san_from_move(move):
     square_from, square_to, promotion = move
 
     string = ""
@@ -146,7 +154,19 @@ def print_move(move):
     string += row_to
 
     if promotion:
-        string += "="
-        string += str(promotion)
+        string += promotion_from_piecetype(promotion)
+
 
     return string
+
+
+def move_from_san(san):
+    from_square = index_of_square(san[0:2])
+    to_square = index_of_square(san[2:4])
+
+    if len(san) == 5:
+        promotion = promotion_from_char(san[4])
+    else:
+        promotion = None
+
+    return (from_square, to_square, promotion)

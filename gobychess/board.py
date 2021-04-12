@@ -180,8 +180,7 @@ class Board():
         if not self.all_pieces[square_from]:
             raise ValueError("There is no piece on the square")
         # check if piece can go to square to
-        if not mvg.check_piece_move(piece_to_move, square_from, square_to, self):
-            print(self)
+        if not mvg.check_piece_move(move, self):
             raise ValueError("Move {} is not possible".format(move))
         # check if color to move afterwards in check
         if self.in_check_after_move(move):
@@ -485,3 +484,7 @@ class Board():
             self.castling_rights['black queenside'] = 0
         elif square_from == 63 or square_to == 63:
             self.castling_rights['black kingside'] = 0
+
+
+    def reset_board(self):
+        self.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")

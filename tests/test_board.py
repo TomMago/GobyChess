@@ -5,10 +5,12 @@ import unittest
 from gmpy2 import xmpz
 from gobychess.board import Board
 from gobychess.utils import (bitboard_of_index, bitboard_of_square,
-                             index_of_square, print_bitboard)
+                             index_of_square, print_bitboard, move_from_san)
 
 
 import pytest
+
+
 
 
 class BoardTests(unittest.TestCase):
@@ -138,3 +140,12 @@ class BoardTests(unittest.TestCase):
         test_board.make_move((index_of_square('c7'), index_of_square('c6'), None))
         with pytest.raises(ValueError):
             test_board.make_move((index_of_square('a1'), index_of_square('a3'), None))
+
+
+    def test_move_from_san(self):
+        self.assertEqual(move_from_san('e1e2'), (4, 12, None))
+        self.assertEqual(move_from_san('c4b5'), (26, 33, None))
+        self.assertEqual(move_from_san('e7e8q'), (52, 60, 4))
+        self.assertEqual(move_from_san('d7d8r'), (51, 59, 3))
+        self.assertEqual(move_from_san('c7c8b'), (50, 58, 2))
+        self.assertEqual(move_from_san('b7b8n'), (49, 57, 1))

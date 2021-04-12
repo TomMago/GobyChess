@@ -129,22 +129,22 @@ class MovegenTests(unittest.TestCase):
 
     def test_check_piece_move(self):
         self.board.to_move = 1
-        self.assertEqual(mvg.check_piece_move(0, 8, 16, self.board), True)
-        self.assertEqual(mvg.check_piece_move(0, 8, 24, self.board), False)
-        self.assertEqual(mvg.check_piece_move(0, 9, 25, self.board), True)
-        self.assertEqual(mvg.check_piece_move(2, 26, 33, self.board), True)
-        self.assertEqual(mvg.check_piece_move(2, 26, 53, self.board), False)
-        self.assertEqual(mvg.check_piece_move(3, 7, 6, self.board), True)
-        self.assertEqual(mvg.check_piece_move(3, 7, 8, self.board), False)
+        self.assertEqual(mvg.check_piece_move((8, 16, None), self.board), True)
+        self.assertEqual(mvg.check_piece_move((8, 24, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((9, 25, None), self.board), True)
+        self.assertEqual(mvg.check_piece_move((26, 33, None), self.board), True)
+        self.assertEqual(mvg.check_piece_move((26, 53, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((7, 6, None), self.board), True)
+        self.assertEqual(mvg.check_piece_move((7, 8, None), self.board), False)
 
         self.board.to_move = 0
-        self.assertEqual(mvg.check_piece_move(0, 55, 47, self.board), True)
-        self.assertEqual(mvg.check_piece_move(0, 55, 39, self.board), True)
-        self.assertEqual(mvg.check_piece_move(0, 55, 32, self.board), False)
-        self.assertEqual(mvg.check_piece_move(3, 56, 59, self.board), True)
-        self.assertEqual(mvg.check_piece_move(3, 56, 53, self.board), False)
-        self.assertEqual(mvg.check_piece_move(5, 60, 59, self.board), True)
-        self.assertEqual(mvg.check_piece_move(5, 60, 52, self.board), False)
+        self.assertEqual(mvg.check_piece_move((55, 47, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((55, 39, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((55, 32, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((56, 59, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((56, 53, None), self.board), False)
+        self.assertEqual(mvg.check_piece_move((60, 59, None), self.board), True)
+        self.assertEqual(mvg.check_piece_move((60, 52, None), self.board), False)
 
     def test_in_check(self):
         self.assertEqual(self.board.in_check(), True)
