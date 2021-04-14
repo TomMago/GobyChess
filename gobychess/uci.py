@@ -2,7 +2,7 @@
 
 from .board import Board
 from .utils import move_from_san, san_from_move
-from .search import simple_min_max
+from .search import Searcher
 
 def main():
 
@@ -53,8 +53,10 @@ def main():
                 board.make_generated_move(move_from_san(move))
 
         elif command.startswith('go'):
-            evaluation, best_move = simple_min_max(board, 3, board.to_move)
-            print(f'bestmove {san_from_move(best_move)}')
+            s = Searcher(aim_depth=3)
+            evaluation = s.search_alpha_beta(board)
+            #evaluation, best_move = simple_min_max(board)
+            print(f'bestmove {san_from_move(s.best_move)}')
 
         else:
             pass

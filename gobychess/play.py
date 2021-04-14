@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from .board import Board
-from .search import simple_min_max, alpha_beta_search
+from .search import Searcher
 from .utils import index_of_square, san_from_move
 
 def play_game():
@@ -35,7 +35,11 @@ def play_game():
         print("Im thinking...", end="\r")
 
         #evalu, engine_move = alpha_beta_search(board, 6, color)
-        evalu, engine_move = simple_min_max(board, 4, color)
+        #evalu, engine_move = simple_min_max(board, 4, color)
+        s = Searcher(aim_depth=4)
+        s.search_alpha_beta(board)
+
+        engine_move = s.best_move
 
         print("I do ", san_from_move(engine_move))
 
