@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
 
 import timeit
 
@@ -51,9 +50,21 @@ from gobychess.board import Board
 
 #cProfile.run('perft(board, 3)')
 
-bit=16
-x = np.uint64(2**bit) | np.uint64(2**(bit - 4))
-gobychess.utils.print_bitboard(x)
+#x = np.bitwise_or(np.uint64(2**bit), np.uint64(2**(bit - 4)))
+#gobychess.utils.print_bitboard(x)
+#print()
+#gobychess.utils.print_bitboard(y)
+#print()
+#print("0b110101")
+#print(gobychess.utils.reverse_bit_scan(x))
+#print(gobychess.utils.forward_bit_scan(x))
+#print("0b010000")
+#print(gobychess.utils.reverse_bit_scan(y))
+#print(gobychess.utils.forward_bit_scan(y))
+#gobychess.utils.print_bitboard(np.bitwise_and(x,np.bitwise_not(y)))
 
 
-(gobychess.movegen.generate_white_pawn_move())
+
+for i in gobychess.movegen.generate_direction(1):
+    gobychess.utils.print_bitboard(i)
+    print()

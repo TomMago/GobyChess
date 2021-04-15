@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-from numba import njit
-
 import numpy as np
 from gmpy2 import bit_clear, bit_scan1, xmpz
 
-from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
-                    reverse_bit_scan)
+from .utils import (bitboard_of_index, forward_bit_scan, invert_bitboard,
+                    print_bitboard, reverse_bit_scan, set_bit, unset_bit)
 
 
 def generate_non_sliding():
@@ -22,6 +20,7 @@ def generate_non_sliding():
                   'pawn white move': [], 'pawn black move': [],
                   'knight': [], 'king': []}
 
+
     non_sliding_table['knight'] = generate_knight()
     non_sliding_table['king'] = generate_king()
     non_sliding_table['pawn white move'] = generate_white_pawn_move()
@@ -30,8 +29,46 @@ def generate_non_sliding():
     non_sliding_table['pawn black capture'] = generate_black_pawn_capture()
     return non_sliding_table
 
-@njit
 def generate_white_pawn_move():
+    '''
+    Generate all non capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (uint64 array): array of bitboards of moves for all 64 squares
+    '''
+    #moves = np.array([], dtype=np.uint64)
+    moves = []
+    for i in range(64):
+        attack_board = np.uint64(0b0)
+        if i <= 7 or i >= 56:
+            pass
+        elif i // 8 == 1:
+            attack_board = set_bit(attack_board, i + 8)
+            attack_board = set_bit(attack_board, i + 16)
+        else:
+            attack_board = set_bit(attack_board, i + 8)
+        moves.append(attack_board)
+    return moves
+
+def generate_white_pawn_capture():
+    '''
+    Generate all capturing pawn moves for white for every sqare
+
+    Returns:
+        moves (uint64 array): array of bitboards of moves for all 64 squares
+    '''
+    moves = []
+    for i in range(64):
+        attack_board = np.uint64(0b0)
+        if i < 56:
+            if (i % 8) != 0:
+                attack_board = set_bit(attack_board, i + 7)
+            if (i + 1) % 8 != 0:
+                attack_board = set_bit(attack_board, i + 9)
+        moves.append(attack_board)
+    return moves
+
+def generate_black_pawn_move():
     '''
     Generate all non capturing pawn moves for white for every sqare
 
@@ -43,57 +80,13 @@ def generate_white_pawn_move():
         attack_board = np.uint64(0b0)
         if i <= 7 or i >= 56:
             pass
-        elif i // 8 == 1:
-            print(attack_board, type(attack_board))
-            print(bitboard_of_index(i + 8), type(bitboard_of_index(i + 8)))
-            attack_board |= bitboard_of_index(i + 8)
-            attack_board |= bitboard_of_index(i + 16)
-        else:
-            attack_board |= bitboard_of_index(i + 8)
-        moves.append(attack_board)
-        print_bitboard(attack_board)
-    return moves
-
-
-def generate_white_pawn_capture():
-    '''
-    Generate all capturing pawn moves for white for every sqare
-
-    Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
-    moves = []
-    for i in range(64):
-        attack_board = xmpz(0b0)
-        if i < 56:
-            if (i % 8) != 0:
-                attack_board[i + 7] = 1
-            if (i + 1) % 8 != 0:
-                attack_board[i + 9] = 1
-        moves.append(attack_board)
-    return moves
-
-
-def generate_black_pawn_move():
-    '''
-    Generate all non capturing pawn moves for white for every sqare
-
-    Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
-    moves = []
-    for i in range(64):
-        attack_board = xmpz(0b0)
-        if i <= 7 or i >= 56:
-            pass
         elif i // 8 == 6:
-            attack_board[i - 8] = 1
-            attack_board[i - 16] = 1
+            attack_board = set_bit(attack_board, i - 8)
+            attack_board = set_bit(attack_board, i - 16)
         else:
-            attack_board[i - 8] = 1
+            attack_board = set_bit(attack_board, i - 8)
         moves.append(attack_board)
     return moves
-
 
 def generate_black_pawn_capture():
     '''
@@ -104,15 +97,14 @@ def generate_black_pawn_capture():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = np.uint64(0b0)
         if i > 7:
             if (i % 8) != 0:
-                attack_board[i - 9] = 1
+                attack_board = set_bit(attack_board, i - 9)
             if (i + 1) % 8 != 0:
-                attack_board[i - 7] = 1
+                attack_board = set_bit(attack_board, i - 7)
         moves.append(attack_board)
     return moves
-
 
 def generate_king():
     '''
@@ -123,26 +115,25 @@ def generate_king():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = np.uint64(0b0)
         if (i + 1) % 8 != 0:
-            attack_board[i + 1] = 1
+            attack_board = set_bit(attack_board, i + 1)
         if i % 8 != 0:
-            attack_board[i - 1] = 1
+            attack_board = set_bit(attack_board, i - 1)
         if (i + 1) % 8 != 0 and (i + 9) <= 63:
-            attack_board[i + 9] = 1
+            attack_board = set_bit(attack_board, i + 9)
         if (i + 1) % 8 != 0 and (i - 7) > 0:
-            attack_board[i - 7] = 1
+            attack_board = set_bit(attack_board, i - 7)
         if (i + 8) <= 63:
-            attack_board[i + 8] = 1
+            attack_board = set_bit(attack_board, i + 8)
         if (i - 8) >= 0:
-            attack_board[i - 8] = 1
+            attack_board = set_bit(attack_board, i - 8)
         if i % 8 != 0 and (i + 7) <= 63:
-            attack_board[i + 7] = 1
+            attack_board = set_bit(attack_board, i + 7)
         if i % 8 != 0 and (i - 9) > 0:
-            attack_board[i - 9] = 1
+            attack_board = set_bit(attack_board, i - 9)
         moves.append(attack_board)
     return moves
-
 
 def generate_knight():
     '''
@@ -153,7 +144,7 @@ def generate_knight():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = np.uint64(0b0)
 
         possible_directions = []
         if i % 8 > 0:
@@ -171,10 +162,9 @@ def generate_knight():
         for j in possible_directions:
             field = i + j
             if 0 <= field <= 63:
-                attack_board[field] = 1
+                attack_board = set_bit(attack_board, field)
         moves.append(attack_board)
     return moves
-
 
 def generate_table():
     '''
@@ -184,9 +174,10 @@ def generate_table():
         move_table (dict): for each direction sliding moves for
                            each square as xmpz bitboard
     '''
-    move_table = {'east': [], 'north': [], 'west': [], 'south': [],
-                  'south east': [], 'south west': [], 'north west': [],
-                  'north east': []}
+    #move_table = {'east': [], 'north': [], 'west': [], 'south': [],
+    #              'south east': [], 'south west': [], 'north west': [],
+    #              'north east': []}
+    move_table = {}
 
     move_table['east'] = generate_direction(1)
     move_table['north'] = generate_direction(8)
@@ -198,7 +189,6 @@ def generate_table():
     move_table['north east'] = generate_direction(9)
 
     return move_table
-
 
 def generate_direction(direction):
     ''' Generate sliding moves for every square for certain direction.
@@ -221,8 +211,8 @@ def generate_direction(direction):
     directions = []
     for i in range(64):
         field_count = i
-        attack_board = xmpz(0b0)
-        attack_board[i] = 0
+        attack_board = np.uint64(0b0)
+        attack_board = unset_bit(attack_board, i)
 
         if direction == +8:
             def condition(field):
@@ -251,7 +241,7 @@ def generate_direction(direction):
 
         while condition(field_count):
             field_count += direction
-            attack_board[field_count] = 1
+            attack_board = set_bit(attack_board, field_count)
 
         directions.append(attack_board)
 
@@ -273,26 +263,26 @@ def rook_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = xmpz(0b0)
-    attacks |= table['east'][square]
-    if table['east'][square] & blockers:
-        idx = bit_scan1(table['east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['east'][idx])
+    attacks = np.uint64(0b0)
+    attacks = np.bitwise_or(attacks, table['east'][square])
+    if np.bitwise_and(table['east'][square], blockers):
+        idx = forward_bit_scan(np.bitwise_and(table['east'][square], blockers))
+        attacks = np.uint64(np.bitwise_and(attacks, np.bitwise_not(table['east'][idx])))
 
-    attacks |= table['north'][square]
-    if table['north'][square] & blockers:
-        idx = bit_scan1(table['north'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north'][idx])
+    attacks = np.bitwise_or(attacks, table['north'][square])
+    if np.bitwise_and(table['north'][square], blockers):
+        idx = forward_bit_scan(np.bitwise_and(table['north'][square], blockers))
+        attacks = np.bitwise_and(attacks, np.bitwise_not(table['north'][idx]))
 
-    attacks |= table['west'][square]
-    if table['west'][square] & blockers:
-        idx = reverse_bit_scan1(table['west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['west'][idx])
+    attacks = np.bitwise_or(attacks, table['west'][square])
+    if np.bitwise_and(table['west'][square], blockers):
+        idx = reverse_bit_scan(table['west'][square] & blockers)
+        attacks = np.bitwise_and(attacks, np.bitwise_not(table['west'][idx]))
 
-    attacks |= table['south'][square]
-    if table['south'][square] & blockers:
-        idx = reverse_bit_scan1(table['south'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south'][idx])
+    attacks = np.bitwise_or(attacks, table['south'][square])
+    if np.bitwise_and(table['south'][square], blockers):
+        idx = reverse_bit_scan(table['south'][square] & blockers)
+        attacks = np.bitwise_and(attacks, np.bitwise_not(table['south'][idx]))
 
     return attacks
 

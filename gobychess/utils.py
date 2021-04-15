@@ -5,7 +5,30 @@ from textwrap import wrap
 import numpy as np
 from gmpy2 import xmpz
 
-from numba import njit, jit
+def forward_bit_scan(bitboard):
+    i = 0
+    while((bitboard >> np.uint64(i)) % 2 == 0):
+        i += 1
+    return i
+
+def reverse_bit_scan(bitboard):
+    i = 63
+    while((bitboard >> np.uint64(i)) % 2 == 0):
+        i -= 1
+    return i
+
+def unset_bit(bitboard, bit):
+    '''
+    sets bit at position bit of bitboard to 1
+    '''
+    return np.bitwise_and(bitboard, np.bitwise_not(np.uint64(2**bit)))
+
+def set_bit(bitboard, bit):
+    '''
+    sets bit at position bit of bitboard to 1
+    '''
+    return np.bitwise_or(bitboard, np.uint64(2**bit))
+
 
 def print_bitboard(board):
     '''
@@ -14,7 +37,6 @@ def print_bitboard(board):
     board = '{:064b}'.format(board)
     print('\n'.join([' '.join(wrap(line, 1))[::-1] for line in wrap(board, 8)]))
 
-@njit
 def bit_scan(bitboard):
     '''
     forward bitscan
@@ -23,25 +45,6 @@ def bit_scan(bitboard):
     lead_zeros = 64-a.argmax()-1
     return 63 - lead_zeros
 
-@njit
-def reverse_bit_scan(bitboard):
-    '''
-    Give index of most significant bit of xmpz bitboard
-
-    Args:
-        bitboard (xmpz): Input  bitboard
-
-    Returns:
-        index of most significant bit (int)
-    '''
-    a = (2**np.arange(64) & bitboard)
-    if bitboard == 0:
-        trail_zeros = 1
-    else:
-        trail_zeros = (a == 0).argmin()
-    return trail_zeros
-
-@njit
 def bitboard_of_index(index):
     '''
     bitboard from index of square
@@ -55,7 +58,6 @@ def bitboard_of_index(index):
     bitboard = np.uint64(2**index)
     return bitboard
 
-
 def index_of_square(square):
     '''
     Index of square
@@ -67,10 +69,9 @@ def index_of_square(square):
         Int: Index of square in bitboard
     '''
     line = ord(square[0].lower()) - ord('a')
-    row = int(square[1])
+    row = np.uint8(square[1])
     idx = 8 * (row - 1) + line
     return idx
-
 
 def bitboard_of_square(square):
     '''
@@ -98,11 +99,11 @@ def bitboard_from_squares(squares):
     Returns:
         xmpz: Bitboard with 1 on respective squares
     '''
-    empty_bitboard = xmpz(0b0)
+    empty_bitboard = np.uint64(0b0)
     squares = squares.split()
     for square in squares:
         idx = index_of_square(square)
-        empty_bitboard[idx] = 1
+        empty_bitboard = np.uint64(set_bit(empty_bitboard, idx))
     return empty_bitboard
 
 
