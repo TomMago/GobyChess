@@ -7,34 +7,29 @@ from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
 
 
 def generate_non_sliding():
-    '''
+    """
     Generate Table for non slide move lookup
 
     Returns:
         dict: dict containing moves for every square for pawn white capture,
               pawn black capture, pawn white move, pawn black move,
               knight and the king
-    '''
-    non_sliding_table = {'pawn white capture': [], 'pawn black capture': [],
-                  'pawn white move': [], 'pawn black move': [],
-                  'knight': [], 'king': []}
+    """
+    non_sliding_table = {'pawn white capture': generate_white_pawn_capture(),
+                         'pawn black capture': generate_black_pawn_capture(),
+                         'pawn white move': generate_white_pawn_move(), 'pawn black move': generate_black_pawn_move(),
+                         'knight': generate_knight(), 'king': generate_king()}
 
-    non_sliding_table['knight'] = generate_knight()
-    non_sliding_table['king'] = generate_king()
-    non_sliding_table['pawn white move'] = generate_white_pawn_move()
-    non_sliding_table['pawn white capture'] = generate_white_pawn_capture()
-    non_sliding_table['pawn black move'] = generate_black_pawn_move()
-    non_sliding_table['pawn black capture'] = generate_black_pawn_capture()
     return non_sliding_table
 
 
 def generate_white_pawn_move():
-    '''
+    """
     Generate all non capturing pawn moves for white for every sqare
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -50,12 +45,12 @@ def generate_white_pawn_move():
 
 
 def generate_white_pawn_capture():
-    '''
+    """
     Generate all capturing pawn moves for white for every sqare
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -69,12 +64,12 @@ def generate_white_pawn_capture():
 
 
 def generate_black_pawn_move():
-    '''
+    """
     Generate all non capturing pawn moves for white for every sqare
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -90,12 +85,12 @@ def generate_black_pawn_move():
 
 
 def generate_black_pawn_capture():
-    '''
+    """
     Generate all capturing pawn moves for white for every sqare
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -109,12 +104,12 @@ def generate_black_pawn_capture():
 
 
 def generate_king():
-    '''
+    """
     Generate all king moves for every square
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -139,12 +134,12 @@ def generate_king():
 
 
 def generate_knight():
-    '''
+    """
     Generate all knight moves for every square
 
     Returns:
         moves (xmpz array): array of bitboards of moves for all 64 squares
-    '''
+    """
     moves = []
     for i in range(64):
         attack_board = xmpz(0b0)
@@ -171,31 +166,23 @@ def generate_knight():
 
 
 def generate_table():
-    '''
+    """
     Generate table of sliding moves in all directions
 
     Returns:
         move_table (dict): for each direction sliding moves for
                            each square as xmpz bitboard
-    '''
-    move_table = {'east': [], 'north': [], 'west': [], 'south': [],
-                  'south east': [], 'south west': [], 'north west': [],
-                  'north east': []}
-
-    move_table['east'] = generate_direction(1)
-    move_table['north'] = generate_direction(8)
-    move_table['west'] = generate_direction(-1)
-    move_table['south'] = generate_direction(-8)
-    move_table['south east'] = generate_direction(-7)
-    move_table['south west'] = generate_direction(-9)
-    move_table['north west'] = generate_direction(7)
-    move_table['north east'] = generate_direction(9)
+    """
+    move_table = {'east': generate_direction(1), 'north': generate_direction(8), 'west': generate_direction(-1),
+                  'south': generate_direction(-8), 'south east': generate_direction(-7),
+                  'south west': generate_direction(-9), 'north west': generate_direction(7),
+                  'north east': generate_direction(9)}
 
     return move_table
 
 
 def generate_direction(direction):
-    ''' Generate sliding moves for every square for certain direction.
+    """ Generate sliding moves for every square for certain direction.
 
 
         noWe         nort         noEa
@@ -211,7 +198,7 @@ def generate_direction(direction):
 
     Returns:
         Array: xmpz bitboard of moves for each square (length 64)
-    '''
+    """
     directions = []
     for i in range(64):
         field_count = i
@@ -257,7 +244,7 @@ non_sliding = generate_non_sliding()
 
 
 def rook_sliding(square, blockers):
-    '''
+    """
     Generates bitboard of all attack squares for the rook with given blockers
 
     Args:
@@ -266,7 +253,7 @@ def rook_sliding(square, blockers):
 
     Returns:
         xmpz bitboard of attacked squares
-    '''
+    """
     attacks = xmpz(0b0)
     attacks |= table['east'][square]
     if table['east'][square] & blockers:
@@ -292,7 +279,7 @@ def rook_sliding(square, blockers):
 
 
 def bishop_sliding(square, blockers):
-    '''
+    """
     Generates bitboard of all attack squares for the bishop with given blockers
 
     Args:
@@ -301,7 +288,7 @@ def bishop_sliding(square, blockers):
 
     Returns:
         xmpz bitboard of attacked squares
-    '''
+    """
     attacks = xmpz(0b0)
     attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
@@ -327,7 +314,7 @@ def bishop_sliding(square, blockers):
 
 
 def queen_sliding(square, blockers):
-    '''
+    """
     Generates bitboard of all attack squares for the queen with given blockers
 
     Args:
@@ -336,35 +323,35 @@ def queen_sliding(square, blockers):
 
     Returns:
         xmpz bitboard of attacked squares
-    '''
+    """
 
     attacks = rook_sliding(square, blockers) | bishop_sliding(square, blockers)
     return attacks
 
 
 def yield_moveset(square, moveset):
-    '''
+    """
     yield all moves of a piece from one square to all squares on a bitboard
-    '''
+    """
     while moveset:
         index_to = bit_scan1(moveset)
-        yield (square, index_to, None)
+        yield square, index_to, None
         moveset = moveset.bit_clear(index_to)
 
 
 def yield_promotion_moveset(square, moveset):
-    '''
+    """
     yield all moves of a piece from one square to all squares on a bitboard
-    '''
+    """
     while moveset:
         index_to = bit_scan1(moveset)
         for i in [1, 2, 3, 4]:
-            yield (square, index_to, i)
+            yield square, index_to, i
         moveset = moveset.bit_clear(index_to)
 
 
 def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
-    '''
+    """
     generate bishop moves
 
     Args:
@@ -373,7 +360,7 @@ def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
 
     Returns:
         generator for all bishop moves gives 3 tuples (from, to, promote)
-    '''
+    """
     while bishop_bitboard:
         bishop_square = bit_scan1(bishop_bitboard)
         attack_bitboard = bishop_sliding(bishop_square, all_pieces)
@@ -383,7 +370,7 @@ def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
 
 
 def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
-    '''
+    """
     generate rook moves
 
     Args:
@@ -392,7 +379,7 @@ def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
 
     Returns:
         generator for all rook moves gives 3 tuples (from, to, promote)
-    '''
+    """
     while rook_bitboard:
         rook_square = bit_scan1(rook_bitboard)
         attack_bitboard = rook_sliding(rook_square, all_pieces)
@@ -402,7 +389,7 @@ def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
 
 
 def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
-    '''
+    """
     generate queen moves
 
     Args:
@@ -411,7 +398,7 @@ def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
 
     Returns:
         generator for all queen moves gives 3 tuples (from, to, promote)
-    '''
+    """
     while queen_bitboard:
         queen_square = bit_scan1(queen_bitboard)
         attack_bitboard = queen_sliding(queen_square, all_pieces)
@@ -421,7 +408,7 @@ def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
 
 
 def gen_pawn_moves_white(pawn_bitboard, board):
-    '''
+    """
     generate pawn moves for white
 
     Args:
@@ -430,7 +417,7 @@ def gen_pawn_moves_white(pawn_bitboard, board):
 
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
-    '''
+    """
     seventhrow = xmpz(0b0000000011111111000000000000000000000000000000000000000000000000)
     pawns = pawn_bitboard & invert_bitboard(seventhrow)
     while pawns:
@@ -457,7 +444,7 @@ def gen_pawn_moves_white(pawn_bitboard, board):
 
 
 def gen_pawn_moves_black(pawn_bitboard, board):
-    '''
+    """
     generate pawn moves for black
 
     Args:
@@ -466,7 +453,7 @@ def gen_pawn_moves_black(pawn_bitboard, board):
 
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
-    '''
+    """
     secondrow = xmpz(0b0000000000000000000000000000000000000000000000001111111100000000)
     pawns = pawn_bitboard & invert_bitboard(secondrow)
     while pawns:
@@ -493,7 +480,7 @@ def gen_pawn_moves_black(pawn_bitboard, board):
 
 
 def gen_knight_moves(knight_bitboard, own_pieces):
-    '''
+    """
     generate knight moves
 
     Args:
@@ -502,7 +489,7 @@ def gen_knight_moves(knight_bitboard, own_pieces):
 
     Returns:
         generator for all knight moves gives 3 tuples (from, to, None)
-    '''
+    """
     while knight_bitboard:
         knight_square = bit_scan1(knight_bitboard)
         attack_bitboard = non_sliding['knight'][knight_square]
@@ -512,7 +499,7 @@ def gen_knight_moves(knight_bitboard, own_pieces):
 
 
 def gen_king_moves(king_bitboard, own_pieces):
-    '''
+    """
     generate king moves
 
     Args:
@@ -521,7 +508,7 @@ def gen_king_moves(king_bitboard, own_pieces):
 
     Returns:
         generator for all knight moves gives 3 tuples (from, to, None)
-    '''
+    """
     while king_bitboard:
         king_square = bit_scan1(king_bitboard)
         attack_bitboard = non_sliding['king'][king_square]
@@ -531,7 +518,7 @@ def gen_king_moves(king_bitboard, own_pieces):
 
 
 def check_piece_move(move, board):
-    '''
+    """
     Check if move for piece is valid
 
     Args:
@@ -542,7 +529,7 @@ def check_piece_move(move, board):
 
     Returns:
         bool: True if move is possible, False if not
-    '''
+    """
     # piece_bitboard = bitboard_of_index(from_square)
     # if piecetype == 0 and board.to_move == 0:
     #     if (from_square, to_square, None) in gen_pawn_moves_black(piece_bitboard, board):
@@ -577,24 +564,24 @@ def check_piece_move(move, board):
 
 
 def generate_moves(board):
-    '''
+    """
     Generates all pseudo legal moves for the color to move
 
     yields:
         moves (tuple): all moves in the form (square_from, square_to, promotion)
-    '''
+    """
     if board.to_move:
         yield from gen_pawn_moves_white(board.pieces[board.to_move][0], board)
         if check_white_castle_kingside(board):
-            yield (4, 6, None)
+            yield 4, 6, None
         if check_white_castle_queenside(board):
-            yield (4, 2, None)
+            yield 4, 2, None
     else:
         yield from gen_pawn_moves_black(board.pieces[board.to_move][0], board)
         if check_black_castle_kingside(board):
-            yield (60, 62, None)
+            yield 60, 62, None
         if check_black_castle_queenside(board):
-            yield (60, 58, None)
+            yield 60, 58, None
     yield from gen_knight_moves(board.pieces[board.to_move][1],
                                 board.all_pieces_color[board.to_move])
     yield from gen_bishop_moves(board.pieces[board.to_move][2],
@@ -611,12 +598,12 @@ def generate_moves(board):
 
 
 def color_in_check(board):
-    '''
+    """
     checks if color to move is in check.
 
     Returns:
         bool: True if color to move is in check, False otherwise
-    '''
+    """
     king_square = bit_scan1(board.pieces[board.to_move][5])
 
     opponent_color = 1 - board.to_move
@@ -641,14 +628,15 @@ def color_in_check(board):
 
 
 def check_white_castle_kingside(board):
-    '''check if black can castle kingside
+    """
+    check if black can castle kingside
 
     Args:
         board (Board): current board
 
     Returns:
         bool: if castling is possible
-    '''
+    """
 
     if not board.castling_rights['white kingside']:
         return False
@@ -679,14 +667,15 @@ def check_white_castle_kingside(board):
 
 
 def check_white_castle_queenside(board):
-    '''check if black can castle kingside
+    """
+    check if black can castle kingside
 
     Args:
         board (Board): current board
 
     Returns:
         bool: if castling is possible
-    '''
+    """
 
     if not board.castling_rights['white queenside']:
         return False
@@ -716,14 +705,15 @@ def check_white_castle_queenside(board):
 
 
 def check_black_castle_kingside(board):
-    '''check if black can castle kingside
+    """
+    check if black can castle kingside
 
     Args:
         board (Board): current board
 
     Returns:
         bool: if castling is possible
-    '''
+    """
     if not board.castling_rights['black kingside']:
         return False
 
@@ -753,14 +743,15 @@ def check_black_castle_kingside(board):
 
 
 def check_black_castle_queenside(board):
-    '''check if black can castle kingside
+    """
+    check if black can castle kingside
 
     Args:
         board (Board): current board
 
     Returns:
         bool: if castling is possible
-    '''
+    """
     if not board.castling_rights['black queenside']:
         return False
 

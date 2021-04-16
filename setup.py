@@ -15,7 +15,7 @@ Operating System :: MacOS
 '''
 
 DISTNAME = 'gobychess'
-AUTHOR = 'Tom Magorsc'
+AUTHOR = 'Tom Magorsch'
 AUTHOR_EMAIL = 'tom.magorsch@tu-dortmund.de'
 DESCRIPTION = 'Chess Engine'
 LICENSE = 'MIT'

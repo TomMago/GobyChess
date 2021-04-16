@@ -2,8 +2,9 @@
 
 from .evaluation import piece_scores, weighted_piece_scores
 
+
 class Searcher:
-    '''
+    """
     Searcher Object can execute different searches with given settings
 
     Searcher stores current best move in best move variable best_move
@@ -12,13 +13,12 @@ class Searcher:
     while positive are good for white.
     Therefore the search will try to minimize the score if black is to move
     and maximize it otherwise.
-    '''
+    """
 
     def __init__(self, aim_depth=0):
         self.best_move = (None, None, None)
         self.evaluation = 0
         self.aim_depth = aim_depth
-
 
     def search_min_max(self, board):
         if board.to_move == 1:
@@ -42,7 +42,6 @@ class Searcher:
                     self.best_move = move
         return max_eval
 
-
     def __min_max_min(self, board, depth):
         moves = board.gen_legal_moves()
         if depth == 0 or board.is_checkmate() or board.is_stalemate():
@@ -57,7 +56,6 @@ class Searcher:
                 if depth == self.aim_depth:
                     self.best_move = move
         return min_eval
-
 
     def search_alpha_beta(self, board):
         if board.to_move == 1:
@@ -84,7 +82,6 @@ class Searcher:
                     break
 
         return max_eval
-
 
     def __alpha_beta_min(self, board, depth, alpha, beta):
         moves = board.gen_legal_moves()
