@@ -6,7 +6,9 @@ from gmpy2 import bit_clear, bit_scan1, xmpz
 from .utils import (bitboard_of_index, forward_bit_scan, invert_bitboard,
                     print_bitboard, reverse_bit_scan, set_bit, unset_bit)
 
+from numba import njit
 
+@njit
 def generate_non_sliding():
     '''
     Generate Table for non slide move lookup
@@ -16,19 +18,21 @@ def generate_non_sliding():
               pawn black capture, pawn white move, pawn black move,
               knight and the king
     '''
-    non_sliding_table = {'pawn white capture': [], 'pawn black capture': [],
-                  'pawn white move': [], 'pawn black move': [],
-                  'knight': [], 'king': []}
+    # non_sliding_table = {'pawn white capture': [], 'pawn black capture': [],
+    #               'pawn white move': [], 'pawn black move': [],
+    #               'knight': [], 'king': []}
+    non_sliding_table = {}
 
 
-    non_sliding_table['knight'] = generate_knight()
-    non_sliding_table['king'] = generate_king()
-    non_sliding_table['pawn white move'] = generate_white_pawn_move()
-    non_sliding_table['pawn white capture'] = generate_white_pawn_capture()
-    non_sliding_table['pawn black move'] = generate_black_pawn_move()
-    non_sliding_table['pawn black capture'] = generate_black_pawn_capture()
+    non_sliding_table['knight'] = np.asarray(generate_knight())
+    non_sliding_table['king'] = np.asarray(generate_king())
+    non_sliding_table['pawn white move'] = np.asarray(generate_white_pawn_move())
+    non_sliding_table['pawn white capture'] = np.asarray(generate_white_pawn_capture())
+    non_sliding_table['pawn black move'] = np.asarray(generate_black_pawn_move())
+    non_sliding_table['pawn black capture'] = np.asarray(generate_black_pawn_capture())
     return non_sliding_table
 
+@njit
 def generate_white_pawn_move():
     '''
     Generate all non capturing pawn moves for white for every sqare
@@ -50,6 +54,7 @@ def generate_white_pawn_move():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_white_pawn_capture():
     '''
     Generate all capturing pawn moves for white for every sqare
@@ -68,6 +73,7 @@ def generate_white_pawn_capture():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_black_pawn_move():
     '''
     Generate all non capturing pawn moves for white for every sqare
@@ -88,6 +94,7 @@ def generate_black_pawn_move():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_black_pawn_capture():
     '''
     Generate all capturing pawn moves for white for every sqare
@@ -106,6 +113,7 @@ def generate_black_pawn_capture():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_king():
     '''
     Generate all king moves for every square
@@ -135,6 +143,7 @@ def generate_king():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_knight():
     '''
     Generate all knight moves for every square
@@ -166,6 +175,7 @@ def generate_knight():
         moves.append(attack_board)
     return moves
 
+@njit
 def generate_table():
     '''
     Generate table of sliding moves in all directions
@@ -179,17 +189,18 @@ def generate_table():
     #              'north east': []}
     move_table = {}
 
-    move_table['east'] = generate_direction(1)
-    move_table['north'] = generate_direction(8)
-    move_table['west'] = generate_direction(-1)
-    move_table['south'] = generate_direction(-8)
-    move_table['south east'] = generate_direction(-7)
-    move_table['south west'] = generate_direction(-9)
-    move_table['north west'] = generate_direction(7)
-    move_table['north east'] = generate_direction(9)
+    move_table['east'] = np.asarray(generate_direction(1))
+    move_table['north'] = np.asarray(generate_direction(8))
+    move_table['west'] = np.asarray(generate_direction(-1))
+    move_table['south'] = np.asarray(generate_direction(-8))
+    move_table['south east'] = np.asarray(generate_direction(-7))
+    move_table['south west'] = np.asarray(generate_direction(-9))
+    move_table['north west'] = np.asarray(generate_direction(7))
+    move_table['north east'] = np.asarray(generate_direction(9))
 
     return move_table
 
+@njit
 def generate_direction(direction):
     ''' Generate sliding moves for every square for certain direction.
 
@@ -248,11 +259,11 @@ def generate_direction(direction):
     return directions
 
 
-table = generate_table()
-non_sliding = generate_non_sliding()
+#table = generate_table()
+#non_sliding = generate_non_sliding()
 
-
-def rook_sliding(square, blockers):
+@njit
+def rook_sliding(square, blockers, table, non_sliding):
     '''
     Generates bitboard of all attack squares for the rook with given blockers
 
@@ -286,8 +297,8 @@ def rook_sliding(square, blockers):
 
     return attacks
 
-
-def bishop_sliding(square, blockers):
+@njit
+def bishop_sliding(square, blockers, table, non_sliding):
     '''
     Generates bitboard of all attack squares for the bishop with given blockers
 
@@ -298,30 +309,30 @@ def bishop_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = xmpz(0b0)
+    attacks = np.uint64(0b0)
     attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
-        idx = bit_scan1(table['north east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north east'][idx])
+        idx = forward_bit_scan(table['north east'][square] & blockers)
+        attacks = attacks & np.bitwise_not(table['north east'][idx])
 
     attacks |= table['north west'][square]
     if table['north west'][square] & blockers:
-        idx = bit_scan1(table['north west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north west'][idx])
+        idx = forward_bit_scan(table['north west'][square] & blockers)
+        attacks = attacks & np.bitwise_not(table['north west'][idx])
 
     attacks |= table['south west'][square]
     if table['south west'][square] & blockers:
-        idx = reverse_bit_scan1(table['south west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south west'][idx])
+        idx = reverse_bit_scan(table['south west'][square] & blockers)
+        attacks = attacks & np.bitwise_not(table['south west'][idx])
 
     attacks |= table['south east'][square]
     if table['south east'][square] & blockers:
-        idx = reverse_bit_scan1(table['south east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south east'][idx])
+        idx = reverse_bit_scan(table['south east'][square] & blockers)
+        attacks = attacks & np.bitwise_not(table['south east'][idx])
 
     return attacks
 
-
+@njit
 def queen_sliding(square, blockers):
     '''
     Generates bitboard of all attack squares for the queen with given blockers

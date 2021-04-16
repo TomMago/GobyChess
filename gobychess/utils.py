@@ -5,24 +5,30 @@ from textwrap import wrap
 import numpy as np
 from gmpy2 import xmpz
 
+from numba import njit
+
+@njit
 def forward_bit_scan(bitboard):
     i = 0
     while((bitboard >> np.uint64(i)) % 2 == 0):
         i += 1
     return i
 
+@njit
 def reverse_bit_scan(bitboard):
     i = 63
     while((bitboard >> np.uint64(i)) % 2 == 0):
         i -= 1
     return i
 
+@njit
 def unset_bit(bitboard, bit):
     '''
     sets bit at position bit of bitboard to 1
     '''
     return np.bitwise_and(bitboard, np.bitwise_not(np.uint64(2**bit)))
 
+@njit
 def set_bit(bitboard, bit):
     '''
     sets bit at position bit of bitboard to 1
@@ -37,6 +43,7 @@ def print_bitboard(board):
     board = '{:064b}'.format(board)
     print('\n'.join([' '.join(wrap(line, 1))[::-1] for line in wrap(board, 8)]))
 
+@njit
 def bit_scan(bitboard):
     '''
     forward bitscan
@@ -45,6 +52,7 @@ def bit_scan(bitboard):
     lead_zeros = 64-a.argmax()-1
     return 63 - lead_zeros
 
+@njit
 def bitboard_of_index(index):
     '''
     bitboard from index of square

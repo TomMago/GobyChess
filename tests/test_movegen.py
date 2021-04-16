@@ -14,47 +14,50 @@ from gobychess.utils import bitboard_of_square, index_of_square, bitboard_from_s
 def set_board():
     board = Board()
     board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
-    return board
+    table = mvg.generate_table()
+    non_sliding = mvg.generate_non_sliding()
+    return board, table, non_sliding
 
 
 def test_rook_sliding(set_board):
     square = index_of_square('a8')
     attack_bitboard = bitboard_from_squares('b8 c8 d8 e8 a7')
-    gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(0b00101010101010))
+    gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
     assert gen_attack_bitboard == attack_bitboard
 
-    #square = index_of_square('h1')
-    #attack_bitboard = bitboard_from_squares('g1 f1 h2')
-    #gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(set_board.all_pieces))
-    #assert gen_attack_bitboard == attack_bitboard
+    square = index_of_square('h1')
+    attack_bitboard = bitboard_from_squares('g1 f1 h2')
+    gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
 
-    #square = index_of_square('a1')
-    #attack_bitboard = bitboard_from_squares('b1 a2')
-    #gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(set_board.all_pieces))
-    #assert gen_attack_bitboard == attack_bitboard
+    square = index_of_square('a1')
+    attack_bitboard = bitboard_from_squares('b1 a2')
+    gen_attack_bitboard = mvg.rook_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
 
-## def test_bishop_sliding(set_board):
-##     square = index_of_square('c4')
-##     attack_bitboard = bitboard_from_squares('b5 a6 b3 a2 d3 e2 f1 d5')
-##     gen_attack_bitboard = mvg.bishop_sliding(square, set_board.all_pieces)
-##     assert gen_attack_bitboard == attack_bitboard
-##
-##     square = index_of_square('c1')
-##     attack_bitboard = bitboard_from_squares('d2 b2')
-##     gen_attack_bitboard = mvg.bishop_sliding(square, set_board.all_pieces)
-##     assert gen_attack_bitboard == attack_bitboard
-##
-##     square = index_of_square('f2')
-##     attack_bitboard = bitboard_from_squares('e1 g1 g3 e3 d4 h4')
-##     gen_attack_bitboard = mvg.bishop_sliding(square, set_board.all_pieces)
-##     assert gen_attack_bitboard == attack_bitboard
-##
-##     square = index_of_square('g4')
-##     attack_bitboard = bitboard_from_squares('f3 e2 d1 h3 h5 f5 e6 d7 c8')
-##     gen_attack_bitboard = mvg.bishop_sliding(square, set_board.all_pieces)
-##     assert gen_attack_bitboard == attack_bitboard
-##
-##
+
+def test_bishop_sliding(set_board):
+    square = index_of_square('c4')
+    attack_bitboard = bitboard_from_squares('b5 a6 b3 a2 d3 e2 f1 d5')
+    gen_attack_bitboard = mvg.bishop_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
+
+    square = index_of_square('c1')
+    attack_bitboard = bitboard_from_squares('d2 b2')
+    gen_attack_bitboard = mvg.bishop_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
+
+    square = index_of_square('f2')
+    attack_bitboard = bitboard_from_squares('e1 g1 g3 e3 d4 h4')
+    gen_attack_bitboard = mvg.bishop_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
+
+    square = index_of_square('g4')
+    attack_bitboard = bitboard_from_squares('f3 e2 d1 h3 h5 f5 e6 d7 c8')
+    gen_attack_bitboard = mvg.bishop_sliding(square, np.uint64(set_board[0].all_pieces), set_board[1], set_board[2])
+    assert gen_attack_bitboard == attack_bitboard
+
+
 ## def test_gen_bishop_moves(set_board):
 ##     black_moves = len(list(mvg.gen_bishop_moves(set_board.pieces[0][2],
 ##                                                 set_board.all_pieces,
