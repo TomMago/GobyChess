@@ -4,7 +4,8 @@ import numpy as np
 from gmpy2 import bit_clear, bit_scan1, xmpz
 
 from .utils import (bitboard_of_index, forward_bit_scan, invert_bitboard,
-                    print_bitboard, reverse_bit_scan, set_bit, unset_bit)
+                    print_bitboard, reverse_bit_scan, set_bit, unset_bit,
+                    get_bit)
 
 from numba import njit
 
@@ -333,7 +334,7 @@ def bishop_sliding(square, blockers, table, non_sliding):
     return attacks
 
 @njit
-def queen_sliding(square, blockers):
+def queen_sliding(square, blockers, table, non_sliding):
     '''
     Generates bitboard of all attack squares for the queen with given blockers
 
@@ -345,32 +346,37 @@ def queen_sliding(square, blockers):
         xmpz bitboard of attacked squares
     '''
 
-    attacks = rook_sliding(square, blockers) | bishop_sliding(square, blockers)
+    attacks = rook_sliding(square, blockers, table, non_sliding) | bishop_sliding(square, blockers, table, non_sliding)
     return attacks
 
-
+@njit
 def yield_moveset(square, moveset):
     '''
     yield all moves of a piece from one square to all squares on a bitboard
     '''
+    moves = []
     while moveset:
-        index_to = bit_scan1(moveset)
-        yield (square, index_to, None)
-        moveset = moveset.bit_clear(index_to)
+        index_to = forward_bit_scan(moveset)
+        #yield (square, index_to, None)
+        moves.append((square, index_to, None))
+        moveset = unset_bit(moveset, index_to)
+    return moves
 
-
+@njit
 def yield_promotion_moveset(square, moveset):
     '''
     yield all moves of a piece from one square to all squares on a bitboard
     '''
+    moves = []
     while moveset:
-        index_to = bit_scan1(moveset)
+        index_to = forward_bit_scan(moveset)
         for i in [1, 2, 3, 4]:
-            yield (square, index_to, i)
-        moveset = moveset.bit_clear(index_to)
+            moves.append((square, index_to, i))
+        moveset = unset_bit(moveset, index_to)
+    return moves
 
-
-def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
+@njit
+def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces, table, non_sliding):
     '''
     generate bishop moves
 
@@ -381,15 +387,17 @@ def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
     Returns:
         generator for all bishop moves gives 3 tuples (from, to, promote)
     '''
+    moves = []
     while bishop_bitboard:
-        bishop_square = bit_scan1(bishop_bitboard)
-        attack_bitboard = bishop_sliding(bishop_square, all_pieces)
-        bishop_bitboard = bishop_bitboard.bit_clear(bishop_square)
-        moveset = attack_bitboard & invert_bitboard(own_pieces)
-        yield from yield_moveset(bishop_square, moveset)
+        bishop_square = forward_bit_scan(bishop_bitboard)
+        attack_bitboard = bishop_sliding(bishop_square, all_pieces, table, non_sliding)
+        bishop_bitboard = unset_bit(bishop_bitboard, bishop_square)
+        moveset = attack_bitboard & np.bitwise_not(own_pieces)
+        moves.extend(yield_moveset(bishop_square, moveset))
+    return moves
 
-
-def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
+@njit
+def gen_rook_moves(rook_bitboard, all_pieces, own_pieces, table, non_sliding):
     '''
     generate rook moves
 
@@ -400,15 +408,17 @@ def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
     Returns:
         generator for all rook moves gives 3 tuples (from, to, promote)
     '''
+    moves = []
     while rook_bitboard:
-        rook_square = bit_scan1(rook_bitboard)
-        attack_bitboard = rook_sliding(rook_square, all_pieces)
-        rook_bitboard = rook_bitboard.bit_clear(rook_square)
-        moveset = attack_bitboard & invert_bitboard(own_pieces)
-        yield from yield_moveset(rook_square, moveset)
+        rook_square = forward_bit_scan(rook_bitboard)
+        attack_bitboard = rook_sliding(rook_square, all_pieces, table, non_sliding)
+        rook_bitboard = unset_bit(rook_bitboard, rook_square)
+        moveset = attack_bitboard & np.bitwise_not(own_pieces)
+        moves.extend(yield_moveset(rook_square, moveset))
+    return moves
 
-
-def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
+@njit
+def gen_queen_moves(queen_bitboard, all_pieces, own_pieces, table, non_sliding):
     '''
     generate queen moves
 
@@ -419,15 +429,17 @@ def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
     Returns:
         generator for all queen moves gives 3 tuples (from, to, promote)
     '''
+    moves = []
     while queen_bitboard:
-        queen_square = bit_scan1(queen_bitboard)
-        attack_bitboard = queen_sliding(queen_square, all_pieces)
-        queen_bitboard = queen_bitboard.bit_clear(queen_square)
-        moveset = attack_bitboard & invert_bitboard(own_pieces)
-        yield from yield_moveset(queen_square, moveset)
+        queen_square = forward_bit_scan(queen_bitboard)
+        attack_bitboard = queen_sliding(queen_square, all_pieces, table, non_sliding)
+        queen_bitboard = unset_bit(queen_bitboard, queen_square)
+        moveset = attack_bitboard & np.bitwise_not(own_pieces)
+        moves.extend(yield_moveset(queen_square, moveset))
+    return moves
 
-
-def gen_pawn_moves_white(pawn_bitboard, board):
+@njit
+def gen_pawn_moves_white(pawn_bitboard, board, table, non_sliding):
     '''
     generate pawn moves for white
 
@@ -438,29 +450,31 @@ def gen_pawn_moves_white(pawn_bitboard, board):
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
     '''
-    seventhrow = xmpz(0b0000000011111111000000000000000000000000000000000000000000000000)
-    pawns = pawn_bitboard & invert_bitboard(seventhrow)
+    moves = []
+    seventhrow = np.uint64(0b0000000011111111000000000000000000000000000000000000000000000000)
+    pawns = pawn_bitboard & np.bitwise_not(seventhrow)
     while pawns:
-        pawn_square = bit_scan1(pawns)
-        if not board.all_pieces[pawn_square + 8]:
-            yield from yield_moveset(pawn_square,
-                                     non_sliding['pawn white move'][pawn_square]
-                                     & invert_bitboard(board.all_pieces))
-        yield from yield_moveset(pawn_square,
-                                 non_sliding['pawn white capture'][pawn_square]
-                                 & (board.all_pieces_color[0] | board.en_passant))
-        pawns = pawns.bit_clear(pawn_square)
+        pawn_square = forward_bit_scan(pawns)
+        if not get_bit(board.all_pieces, pawn_square + 8):
+            moves.extend(yield_moveset(pawn_square,
+                                       non_sliding['pawn white move'][pawn_square]
+                                       & np.bitwise_not(board.all_pieces)))
+        moves.extend(yield_moveset(pawn_square,
+                                   non_sliding['pawn white capture'][pawn_square]
+                                   & (board.all_pieces_color[0] | board.en_passant)))
+        pawns = unset_bit(pawns, pawn_square)
 
     pawns_seventh = pawn_bitboard & seventhrow
     while pawns_seventh:
-        pawn_square = bit_scan1(pawns_seventh)
-        yield from yield_promotion_moveset(pawn_square,
-                                           non_sliding['pawn white move'][pawn_square]
-                                           & invert_bitboard(board.all_pieces))
-        yield from yield_promotion_moveset(pawn_square,
-                                           non_sliding['pawn white capture'][pawn_square]
-                                           & board.all_pieces_color[0])
-        pawns_seventh = pawns_seventh.bit_clear(pawn_square)
+        pawn_square = forward_bit_scan(pawns_seventh)
+        moves.extend(yield_promotion_moveset(pawn_square,
+                                             non_sliding['pawn white move'][pawn_square]
+                                             & np.bitwise_not(board.all_pieces)))
+        moves.extend(yield_promotion_moveset(pawn_square,
+                                             non_sliding['pawn white capture'][pawn_square]
+                                             & board.all_pieces_color[0]))
+        pawns_seventh = unset_bit(pawns_seventh, pawn_square)
+    return moves
 
 
 def gen_pawn_moves_black(pawn_bitboard, board):

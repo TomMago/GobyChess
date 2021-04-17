@@ -22,6 +22,11 @@ def reverse_bit_scan(bitboard):
     return i
 
 @njit
+def get_bit(bitboard, bit):
+    return np.bitwise_and(bitboard, np.uint64(2**bit))
+
+
+@njit
 def unset_bit(bitboard, bit):
     '''
     sets bit at position bit of bitboard to 1
@@ -66,6 +71,7 @@ def bitboard_of_index(index):
     bitboard = np.uint64(2**index)
     return bitboard
 
+@njit
 def index_of_square(square):
     '''
     Index of square
@@ -77,10 +83,11 @@ def index_of_square(square):
         Int: Index of square in bitboard
     '''
     line = ord(square[0].lower()) - ord('a')
-    row = np.uint8(square[1])
+    row = ord(square[1]) - ord('0')
     idx = 8 * (row - 1) + line
     return idx
 
+@njit
 def bitboard_of_square(square):
     '''
     Bitboard for square
@@ -92,8 +99,7 @@ def bitboard_of_square(square):
         xmpz: Bitboard with 1 on respective square
     '''
     idx = index_of_square(square)
-    empty_bitboard = xmpz(0b0)
-    empty_bitboard[idx] = 1
+    empty_bitboard = np.uint64(2**idx)
     return empty_bitboard
 
 
