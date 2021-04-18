@@ -358,7 +358,7 @@ def yield_moveset(square, moveset):
     while moveset:
         index_to = forward_bit_scan(moveset)
         #yield (square, index_to, None)
-        moves.append((square, index_to, None))
+        moves.append((square, index_to, 100))
         moveset = unset_bit(moveset, index_to)
     return moves
 
@@ -477,7 +477,8 @@ def gen_pawn_moves_white(pawn_bitboard, board, table, non_sliding):
     return moves
 
 
-def gen_pawn_moves_black(pawn_bitboard, board):
+@njit
+def gen_pawn_moves_black(pawn_bitboard, board, table, non_sliding):
     '''
     generate pawn moves for black
 
@@ -488,32 +489,34 @@ def gen_pawn_moves_black(pawn_bitboard, board):
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
     '''
-    secondrow = xmpz(0b0000000000000000000000000000000000000000000000001111111100000000)
-    pawns = pawn_bitboard & invert_bitboard(secondrow)
+    moves = []
+    secondrow = np.uint64(0b0000000000000000000000000000000000000000000000001111111100000000)
+    pawns = pawn_bitboard & np.bitwise_not(secondrow)
     while pawns:
-        pawn_square = bit_scan1(pawns)
-        if not board.all_pieces[pawn_square - 8]:
-            yield from yield_moveset(pawn_square,
-                                     non_sliding['pawn black move'][pawn_square]
-                                     & invert_bitboard(board.all_pieces))
-        yield from yield_moveset(pawn_square,
-                                 non_sliding['pawn black capture'][pawn_square]
-                                 & (board.all_pieces_color[1] | board.en_passant))
-        pawns = pawns.bit_clear(pawn_square)
+        pawn_square = forward_bit_scan(pawns)
+        if not get_bit(board.all_pieces, pawn_square - 8):
+            moves.extend(yield_moveset(pawn_square,
+                                       non_sliding['pawn black move'][pawn_square]
+                                       & np.bitwise_not(board.all_pieces)))
+        moves.extend(yield_moveset(pawn_square,
+                                   non_sliding['pawn black capture'][pawn_square]
+                                   & (board.all_pieces_color[1] | board.en_passant)))
+        pawns = unset_bit(pawns, pawn_square)
 
     pawns_second = pawn_bitboard & secondrow
     while pawns_second:
-        pawn_square = bit_scan1(pawns_second)
-        yield from yield_promotion_moveset(pawn_square,
-                                           non_sliding['pawn black move'][pawn_square]
-                                           & invert_bitboard(board.all_pieces))
-        yield from yield_promotion_moveset(pawn_square,
-                                           non_sliding['pawn black capture'][pawn_square]
-                                           & board.all_pieces_color[1])
-        pawns_second = pawns_second.bit_clear(pawn_square)
+        pawn_square = forward_bit_scan(pawns_second)
+        moves.extend(yield_promotion_moveset(pawn_square,
+                                             non_sliding['pawn black move'][pawn_square]
+                                             & np.bitwise_not(board.all_pieces)))
+        moves.extend(yield_promotion_moveset(pawn_square,
+                                             non_sliding['pawn black capture'][pawn_square]
+                                             & board.all_pieces_color[1]))
+        pawns_second = unset_bit(pawns_second, pawn_square)
+    return moves
 
-
-def gen_knight_moves(knight_bitboard, own_pieces):
+@njit
+def gen_knight_moves(knight_bitboard, own_pieces, table, non_sliding):
     '''
     generate knight moves
 
@@ -524,15 +527,17 @@ def gen_knight_moves(knight_bitboard, own_pieces):
     Returns:
         generator for all knight moves gives 3 tuples (from, to, None)
     '''
+    moves = []
     while knight_bitboard:
-        knight_square = bit_scan1(knight_bitboard)
+        knight_square = forward_bit_scan(knight_bitboard)
         attack_bitboard = non_sliding['knight'][knight_square]
-        knight_bitboard = knight_bitboard.bit_clear(knight_square)
-        moveset = attack_bitboard & invert_bitboard(own_pieces)
-        yield from yield_moveset(knight_square, moveset)
+        knight_bitboard = unset_bit(knight_bitboard, knight_square)
+        moveset = attack_bitboard & np.bitwise_not(own_pieces)
+        moves.extend(yield_moveset(knight_square, moveset))
+    return moves
 
-
-def gen_king_moves(king_bitboard, own_pieces):
+@njit
+def gen_king_moves(king_bitboard, own_pieces, table, non_sliding):
     '''
     generate king moves
 
@@ -543,12 +548,14 @@ def gen_king_moves(king_bitboard, own_pieces):
     Returns:
         generator for all knight moves gives 3 tuples (from, to, None)
     '''
+    moves = []
     while king_bitboard:
-        king_square = bit_scan1(king_bitboard)
+        king_square = forward_bit_scan(king_bitboard)
         attack_bitboard = non_sliding['king'][king_square]
-        king_bitboard = king_bitboard.bit_clear(king_square)
-        moveset = attack_bitboard & invert_bitboard(own_pieces)
-        yield from yield_moveset(king_square, moveset)
+        king_bitboard = unset_bit(king_bitboard ,king_square)
+        moveset = attack_bitboard & np.bitwise_not(own_pieces)
+        moves.extend(yield_moveset(king_square, moveset))
+    return moves
 
 
 def check_piece_move(piecetype, from_square, to_square, board):
@@ -594,49 +601,51 @@ def check_piece_move(piecetype, from_square, to_square, board):
         return True
     return False
 
-
-def generate_moves(board):
+@njit
+def generate_moves(board, table, non_sliding):
     '''
     Generates all pseudo legal moves for the color to move
 
     yields:
         moves (tuple): all moves in the form (square_from, square_to, promotion)
     '''
+    moves = []
     if board.to_move:
-        yield from gen_pawn_moves_white(board.pieces[board.to_move][0], board)
-        if check_white_castle_kingside(board):
-            yield (4, 6, None)
-        if check_white_castle_queenside(board):
-            yield (4, 2, None)
+        moves.extend(gen_pawn_moves_white(board.pieces[board.to_move][0], board, table, non_sliding))
+        if check_white_castle_kingside(board, table, non_sliding):
+            moves.append((4, 6, 100))
+        if check_white_castle_queenside(board, table, non_sliding):
+            moves.append((4, 2, 100))
     else:
-        yield from gen_pawn_moves_black(board.pieces[board.to_move][0], board)
-        if check_black_castle_kingside(board):
-            yield (60, 62, None)
-        if check_black_castle_queenside(board):
-            yield (60, 58, None)
-    yield from gen_knight_moves(board.pieces[board.to_move][1],
-                                board.all_pieces_color[board.to_move])
-    yield from gen_bishop_moves(board.pieces[board.to_move][2],
+        moves.extend(gen_pawn_moves_black(board.pieces[board.to_move][0], board, table, non_sliding))
+        if check_black_castle_kingside(board, table, non_sliding):
+            moves.append((60, 62, 100))
+        if check_black_castle_queenside(board, table, non_sliding):
+            moves.append((60, 58, 100))
+    moves.extend(gen_knight_moves(board.pieces[board.to_move][1],
+                                  board.all_pieces_color[board.to_move], table, non_sliding))
+    moves.extend(gen_bishop_moves(board.pieces[board.to_move][2],
                                 board.all_pieces,
-                                board.all_pieces_color[board.to_move])
-    yield from gen_rook_moves(board.pieces[board.to_move][3],
+                                  board.all_pieces_color[board.to_move], table, non_sliding))
+    moves.extend(gen_rook_moves(board.pieces[board.to_move][3],
                               board.all_pieces,
-                              board.all_pieces_color[board.to_move])
-    yield from gen_queen_moves(board.pieces[board.to_move][4],
+                                board.all_pieces_color[board.to_move], table, non_sliding))
+    moves.extend(gen_queen_moves(board.pieces[board.to_move][4],
                                board.all_pieces,
-                               board.all_pieces_color[board.to_move])
-    yield from gen_king_moves(board.pieces[board.to_move][5],
-                              board.all_pieces_color[board.to_move])
+                                 board.all_pieces_color[board.to_move], table, non_sliding))
+    moves.extend(gen_king_moves(board.pieces[board.to_move][5],
+                                board.all_pieces_color[board.to_move], table, non_sliding))
+    return moves
 
-
-def color_in_check(board):
+@njit
+def color_in_check(board, table, non_sliding):
     '''
     checks if color to move is in check.
 
     Returns:
         bool: True if color to move is in check, False otherwise
     '''
-    king_square = bit_scan1(board.pieces[board.to_move][5])
+    king_square = forward_bit_scan(board.pieces[board.to_move][5])
 
     opponent_color = 1 - board.to_move
 
@@ -644,11 +653,11 @@ def color_in_check(board):
         return True
     if non_sliding['knight'][king_square] & board.pieces[opponent_color][1]:
         return True
-    if bishop_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][2]:
+    if bishop_sliding(king_square, board.all_pieces, table, non_sliding) & board.pieces[opponent_color][2]:
         return True
-    if rook_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][3]:
+    if rook_sliding(king_square, board.all_pieces, table, non_sliding) & board.pieces[opponent_color][3]:
         return True
-    if queen_sliding(king_square, board.all_pieces) & board.pieces[opponent_color][4]:
+    if queen_sliding(king_square, board.all_pieces, table, non_sliding) & board.pieces[opponent_color][4]:
         return True
     if board.to_move:
         if non_sliding['pawn white capture'][king_square] & board.pieces[opponent_color][0]:
@@ -658,8 +667,8 @@ def color_in_check(board):
             return True
     return False
 
-
-def check_white_castle_kingside(board):
+@njit
+def check_white_castle_kingside(board, table, non_sliding):
     '''check if black can castle kingside
 
     Args:
@@ -669,35 +678,35 @@ def check_white_castle_kingside(board):
         bool: if castling is possible
     '''
 
-    if not board.castling_rights['white kingside']:
+    if not board.castling_white_kingside:
         return False
 
-    if board.all_pieces[5] == 1 or board.all_pieces[6] == 1:
+    if get_bit(board.all_pieces, 5) == 1 or get_bit(board.all_pieces, 6) == 1:
         return False
 
-    if board.in_check():
+    if board.in_check(table, non_sliding):
         return False
 
     tmp_board = board.board_copy()
 
     for i in [5, 6]:
 
-        tmp_board.pieces[1][5][i-1] = 0
-        tmp_board.pieces[1][5][i] = 1
+        tmp_board.pieces[1][5] = unset_bit(tmp_board.pieces[1][5], i-1)
+        tmp_board.pieces[1][5] = set_bit(tmp_board.pieces[1][5], i)
 
-        tmp_board.all_pieces[i-1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i-1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[1][i-1] = 0
-        tmp_board.all_pieces_color[1][i] = 1
+        tmp_board.all_pieces_color[1] = unset_bit(tmp_board.all_pieces_color[1], i-1)
+        tmp_board.all_pieces_color[1] = set_bit(tmp_board.all_pieces_color[1], i)
 
-        if tmp_board.in_check():
+        if tmp_board.in_check(table, non_sliding):
             return False
 
     return True
 
-
-def check_white_castle_queenside(board):
+@njit
+def check_white_castle_queenside(board, table, non_sliding):
     '''check if black can castle kingside
 
     Args:
@@ -707,34 +716,34 @@ def check_white_castle_queenside(board):
         bool: if castling is possible
     '''
 
-    if not board.castling_rights['white queenside']:
+    if not board.castling_white_queenside:
         return False
 
-    if board.all_pieces[3] == 1 or board.all_pieces[2] == 1 or board.all_pieces[1] == 1:
+    if get_bit(board.all_pieces, 3) == 1 or get_bit(board.all_pieces, 2) == 1 or get_bit(board.all_pieces, 1) == 1:
         return False
 
-    if board.in_check():
+    if board.in_check(table, non_sliding):
         return False
 
     tmp_board = board.board_copy()
 
     for i in [3, 2]:
-        tmp_board.pieces[1][5][i+1] = 0
-        tmp_board.pieces[1][5][i] = 1
+        tmp_board.pieces[1][5] = unset_bit(tmp_board.pieces[1][5], i+1)
+        tmp_board.pieces[1][5] = set_bit(tmp_board.pieces[1][5], i)
 
-        tmp_board.all_pieces[i+1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i+1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[1][i+1] = 0
-        tmp_board.all_pieces_color[1][i] = 1
+        tmp_board.all_pieces_color[1] = unset_bit(tmp_board.all_pieces_color[1], i+1)
+        tmp_board.all_pieces_color[1] = set_bit(tmp_board.all_pieces_color[1], i)
 
-        if tmp_board.in_check():
+        if tmp_board.in_check(table, non_sliding):
             return False
 
     return True
 
-
-def check_black_castle_kingside(board):
+@njit
+def check_black_castle_kingside(board, table, non_sliding):
     '''check if black can castle kingside
 
     Args:
@@ -743,35 +752,35 @@ def check_black_castle_kingside(board):
     Returns:
         bool: if castling is possible
     '''
-    if not board.castling_rights['black kingside']:
+    if not board.castling_black_kingside:
         return False
 
-    if board.all_pieces[61] == 1 or board.all_pieces[62] == 1:
+    if get_bit(board.all_pieces, 61) == 1 or get_bit(board.all_pieces, 62) == 1:
         return False
 
-    if board.in_check():
+    if board.in_check(table, non_sliding):
         return False
 
     tmp_board = board.board_copy()
 
     for i in [61, 62]:
 
-        tmp_board.pieces[0][5][i-1] = 0
-        tmp_board.pieces[0][5][i] = 1
+        tmp_board.pieces[0][5] = unset_bit(tmp_board.pieces[0][5], i-1)
+        tmp_board.pieces[0][5] = set_bit(tmp_board.pieces[0][5], i)
 
-        tmp_board.all_pieces[i-1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i-1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[0][i-1] = 0
-        tmp_board.all_pieces_color[0][i] = 1
+        tmp_board.all_pieces_color[0] = unset_bit(tmp_board.all_pieces_color[0], i-1)
+        tmp_board.all_pieces_color[0] = set_bit(tmp_board.all_pieces_color[0], i)
 
-        if tmp_board.in_check():
+        if tmp_board.in_check(table, non_sliding):
             return False
 
     return True
 
-
-def check_black_castle_queenside(board):
+@njit
+def check_black_castle_queenside(board, table, non_sliding):
     '''check if black can castle kingside
 
     Args:
@@ -780,28 +789,28 @@ def check_black_castle_queenside(board):
     Returns:
         bool: if castling is possible
     '''
-    if not board.castling_rights['black queenside']:
+    if not board.castling_black_queenside:
         return False
 
-    if board.all_pieces[59] == 1 or board.all_pieces[58] == 1 or board.all_pieces[57] == 1:
+    if get_bit(board.all_pieces, 59) == 1 or get_bit(board.all_pieces, 58) == 1 or get_bit(board.all_pieces, 57) == 1:
         return False
 
-    if board.in_check():
+    if board.in_check(table, non_sliding):
         return False
 
     tmp_board = board.board_copy()
 
     for i in [59, 58]:
-        tmp_board.pieces[0][5][i+1] = 0
-        tmp_board.pieces[0][5][i] = 1
+        tmp_board.pieces[0][5] = unset_bit(tmp_board.pieces[0][5], i+1)
+        tmp_board.pieces[0][5] = set_bit(tmp_board.pieces[0][5], i)
 
-        tmp_board.all_pieces[i+1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i+1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[0][i+1] = 0
-        tmp_board.all_pieces_color[0][i] = 1
+        tmp_board.all_pieces_color[0] = unset_bit(tmp_board.all_pieces_color[0], i+1)
+        tmp_board.all_pieces_color[0] = set_bit(tmp_board.all_pieces_color[0], i)
 
-        if tmp_board.in_check():
+        if tmp_board.in_check(table, non_sliding):
             return False
 
     return True

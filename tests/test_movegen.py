@@ -111,43 +111,48 @@ def test_gen_queen_moves(set_board):
                                           set_board[1], set_board[2]))
 
     assert white_moves == 12
-##
-## def test_gen_knight_moves(set_board):
-##     black_moves = len(list(mvg.gen_knight_moves(set_board.pieces[0][1],
-##                                                 set_board.all_pieces_color[0])))
-##
-##     assert black_moves == 13
-##
-##     white_moves = len(list(mvg.gen_knight_moves(set_board.pieces[1][1],
-##                                                 set_board.all_pieces_color[1])))
-##
-##
-##     assert white_moves == 3
-##
-## def test_gen_king_moves(set_board):
-##     black_moves = len(list(mvg.gen_king_moves(set_board.pieces[0][5],
-##                                               set_board.all_pieces_color[0])))
-##
-##     assert black_moves == 4
-##
-##     white_moves = len(list(mvg.gen_king_moves(set_board.pieces[1][5],
-##                                               set_board.all_pieces_color[1])))
-##
-##     assert white_moves == 4
-##
-##
-#
+
+def test_gen_knight_moves(set_board):
+    black_moves = len(mvg.gen_knight_moves(set_board[0].pieces[0][1],
+                                           set_board[0].all_pieces_color[0],
+                                           set_board[1], set_board[2]))
+
+    assert black_moves == 13
+
+    white_moves = len(mvg.gen_knight_moves(set_board[0].pieces[1][1],
+                                           set_board[0].all_pieces_color[1],
+                                           set_board[1], set_board[2]))
+
+
+    assert white_moves == 3
+
+def test_gen_king_moves(set_board):
+    black_moves = len(mvg.gen_king_moves(set_board[0].pieces[0][5],
+                                         set_board[0].all_pieces_color[0],
+                                         set_board[1], set_board[2]))
+
+    assert black_moves == 4
+
+    white_moves = len(mvg.gen_king_moves(set_board[0].pieces[1][5],
+                                         set_board[0].all_pieces_color[1],
+                                         set_board[1], set_board[2]))
+
+    assert white_moves == 4
+
+
 def test_gen_pawn_moves_white(set_board):
     white_moves = len(mvg.gen_pawn_moves_white(set_board[0].pieces[1][0],
                                                set_board[0],
                                                set_board[1], set_board[2]))
     assert white_moves == 9
-##
-##
-## def test_gen_pawn_moves_black(set_board):
-##     black_moves = len(list(mvg.gen_pawn_moves_black(set_board.pieces[0][0],
-##                                                     set_board)))
-##     assert black_moves == 11
+
+
+def test_gen_pawn_moves_black(set_board):
+    black_moves = len(mvg.gen_pawn_moves_black(set_board[0].pieces[0][0],
+                                               set_board[0],
+                                               set_board[1], set_board[2]))
+
+    assert black_moves == 11
 ##
 ## def test_check_piece_move(set_board):
 ##     set_board.to_move = 1
@@ -168,11 +173,11 @@ def test_gen_pawn_moves_white(set_board):
 ##     assert mvg.check_piece_move(5, 60, 59, set_board) == True
 ##     assert mvg.check_piece_move(5, 60, 52, set_board) == False
 ##
-## def test_in_check(set_board):
-##     assert set_board.in_check() == True
-##     set_board.to_move = 1
-##     assert set_board.in_check() == False
-##     set_board.to_move = 0
+def test_in_check(set_board):
+    assert set_board[0].in_check(set_board[1], set_board[2]) == True
+    set_board[0].to_move = 1
+    assert set_board[0].in_check(set_board[1], set_board[2]) == False
+    set_board[0].to_move = 0
 ##
 ## def test_generate_moves(set_board):
 ##     assert len(list(mvg.generate_moves(set_board))) == 54

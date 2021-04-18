@@ -58,17 +58,17 @@ class BoardTests(unittest.TestCase):
     #     self.assertEqual(self.board.in_check_after_move((60, 51, None)), True)
     #
     #
-    # def test_make_moves(self):
-    #     test_board = Board()
-    #     test_board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    #     #print("e2e4")
-    #     test_board.make_generated_move((index_of_square('e2'), index_of_square('e4'), None))
-    #     self.assertEqual(test_board.to_move, 0)
-    #     #self.assertEqual(test_board.en_passant, 20)
-    #     self.assertEqual(test_board.piece_on(28), (1, 0))
-    #     self.assertEqual(test_board.piece_on(12), (None, None))
-    #     self.assertEqual(test_board.fullmove_counter, 1)
-    #     self.assertEqual(test_board.halfmove_clock, 0)
+    def test_make_moves(self):
+        test_board = Board()
+        test_board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        #print("e2e4")
+        test_board.make_generated_move((index_of_square('e2'), index_of_square('e4'), 100))
+        self.assertEqual(test_board.to_move, 0)
+        self.assertEqual(test_board.en_passant, bitboard_of_index(20))
+        self.assertEqual(test_board.piece_on(28), (1, 0))
+        self.assertEqual(test_board.piece_on(12), (100, 100))
+        #self.assertEqual(test_board.fullmove_counter, 1)
+        #self.assertEqual(test_board.halfmove_clock, 0)
     #
     #
     #     test_board = Board()

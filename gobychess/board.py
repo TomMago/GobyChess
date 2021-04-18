@@ -9,7 +9,7 @@ import numpy as np
 from gmpy2 import bit_scan1, xmpz
 
 from . import movegen as mvg
-from .utils import bitboard_of_index, bitboard_of_square, print_bitboard, set_bit, unset_bit
+from .utils import bitboard_of_index, bitboard_of_square, print_bitboard, set_bit, unset_bit, get_bit
 
 from numba.experimental import jitclass
 
@@ -261,86 +261,97 @@ class Board():
 #         return self
 #
 #
-#     def make_generated_move(self, move):
-#         '''
-#         Apply generated move to board (no check for validity of the move)
+    def make_generated_move(self, move):
+        '''
+        Apply generated move to board (no check for validity of the move)
+
+        Args:
+            move (tuple): Tuple containing (square from, square to, pomotion)
+        '''
+        square_from, square_to, promotion = move
+
+        #square_from = np.uint8(square_from)
+        #square_to = np.uint8(square_to)
+        #promot = np.uint8(square_to)
+
+        color, piece_to_move = self.piece_on(square_from)
+
+        # update bbs for moving piece
+        self.update_piece(self.to_move, piece_to_move, square_from, square_to)
+
+        # check if move is capture:
+        if get_bit(self.all_pieces_color[1 - self.to_move], square_to):
+            for i in range(5):
+                self.pieces[1 - self.to_move][i] = unset_bit(self.pieces[1 - self.to_move][i] ,square_to)
+            self.all_pieces_color[1 - self.to_move] = unset_bit(self.all_pieces_color[1 - self.to_move] ,square_to)
+
+        # set square of captured pawn
+        if self.to_move:
+            pawn_square = square_to - 8
+        else:
+            pawn_square = square_to + 8
+
+        # if move is an en passant capture remove pawn
+        if piece_to_move == 0 and get_bit(self.en_passant, square_to):
+            self.pieces[1 - self.to_move][0] = unset_bit(self.pieces[1 - self.to_move][0] ,pawn_square)
+            self.all_pieces_color[1 - self.to_move] = unset_bit(self.all_pieces_color[1 - self.to_move], pawn_square)
+            self.all_pieces = unset_bit(self.all_pieces, pawn_square)
+
+        # if pawn double move set en passent square
+        if piece_to_move == 0 and abs(square_from - square_to) == 16:
+            self.en_passant = bitboard_of_index(pawn_square)
+        else:
+            self.en_passant = np.uint64(0)
+
+        # if castles update rook
+        if piece_to_move == 5:
+            if move == (4, 6, 100):
+                self.update_piece(1, 3, 7, 5)
+            elif move == (4, 2, 100):
+                self.update_piece(1, 3, 0, 3)
+            elif move == (60, 62, 100):
+                self.update_piece(0, 3, 63, 61)
+            elif move == (60, 58, 100):
+                self.update_piece(0, 3, 56, 59)
+
+        # update castling rights
+        self.update_castling_rights(move, piece_to_move)
+
+        # if move is promotion set new piece and remove pawn
+        if not promotion == 100:
+            # REVIEW rather without update of square_to
+            self.update_piece(self.to_move, promotion, square_from, square_to)
+            self.pieces[self.to_move][0] = unset_bit(self.pieces[self.to_move][0] ,square_to)
+
+        # if self.all_pieces_color[1 - self.to_move][square_to]:
+        #     self.halfmove_clock = 0
+        # elif piece_to_move == 0:
+        #     self.halfmove_clock = 0
+        # else:
+        #     self.halfmove_clock += 1
+        #
+        # if not self.to_move:
+        #     self.fullmove_counter += 1
+
+        self.to_move = 1 - self.to_move
+
+        return self
 #
-#         Args:
-#             move (tuple): Tuple containing (square from, square to, pomotion)
-#         '''
-#         square_from, square_to, promotion = move
-#         color, piece_to_move = self.piece_on(square_from)
-#
-#         # update bbs for moving piece
-#         self.update_piece(self.to_move, piece_to_move, square_from, square_to)
-#
-#         # check if move is capture:
-#         if self.all_pieces_color[1 - self.to_move][square_to]:
-#             for i in range(5):
-#                 self.pieces[1 - self.to_move][i][square_to] = 0
-#             self.all_pieces_color[1 - self.to_move][square_to] = 0
-#
-#         # set square of captured pawn
-#         if self.to_move:
-#             pawn_square = square_to - 8
-#         else:
-#             pawn_square = square_to + 8
-#
-#         # if move is an en passant capture remove pawn
-#         if piece_to_move == 0 and self.en_passant[square_to]:
-#             self.pieces[1 - self.to_move][0][pawn_square] = 0
-#             self.all_pieces_color[1 - self.to_move][pawn_square] = 0
-#             self.all_pieces[pawn_square] = 0
-#
-#         # if pawn double move set en passent square
-#         if piece_to_move == 0 and abs(square_from - square_to) == 16:
-#             self.en_passant = bitboard_of_index(pawn_square)
-#         else:
-#             self.en_passant = xmpz(0b0)
-#
-#         # if castles update rook
-#         if piece_to_move == 5:
-#             if move == (4, 6, None):
-#                 self.update_piece(1, 3, 7, 5)
-#             elif move == (4, 2, None):
-#                 self.update_piece(1, 3, 0, 3)
-#             elif move == (60, 62, None):
-#                 self.update_piece(0, 3, 63, 61)
-#             elif move == (60, 58, None):
-#                 self.update_piece(0, 3, 56, 59)
-#
-#         # update castling rights
-#         self.update_castling_rights(move, piece_to_move)
-#
-#         # if move is promotion set new piece and remove pawn
-#         if promotion:
-#             # REVIEW rather without update of square_to
-#             self.update_piece(self.to_move, promotion, square_from, square_to)
-#             self.pieces[self.to_move][0][square_to] = 0
-#
-#         # if self.all_pieces_color[1 - self.to_move][square_to]:
-#         #     self.halfmove_clock = 0
-#         # elif piece_to_move == 0:
-#         #     self.halfmove_clock = 0
-#         # else:
-#         #     self.halfmove_clock += 1
-#         #
-#         # if not self.to_move:
-#         #     self.fullmove_counter += 1
-#
-#         self.to_move = 1 - self.to_move
-#
-#         return self
-#
-#     def gen_legal_moves(self):
-#         '''
-#         Generates all legal moves for the color to move in the current position
-#
-#         Returns:
-#             iterable of the legal moves
-#         '''
-#         return itertools.filterfalse(lambda moves: self.in_check_after_move(moves),
-#                                      mvg.generate_moves(self))
+    def gen_legal_moves(self, table, non_sliding):
+        '''
+        Generates all legal moves for the color to move in the current position
+
+        Returns:
+           iterable of the legal moves
+        '''
+        moves = []
+        mm = mvg.generate_moves(self, table, non_sliding)
+        for move in mm:
+            if not self.in_check_after_move(move, table, non_sliding):
+                moves.append(move)
+        return moves
+        #return  [i for i in mvg.generate_moves(self, table, non_sliding) if self.in_check_after_move(i, table, non_sliding)]
+        #filter(self.in_check_after_move, mvg.generate_moves(self, table, non_sliding))
 #
     def update_all_pieces(self):
         '''
@@ -359,104 +370,117 @@ class Board():
         self.all_pieces |= self.all_pieces_color[0]
         self.all_pieces |= self.all_pieces_color[1]
 #
-#     def piece_on(self, square):
-#         '''
-#         Check what piece is on certain square
+    def piece_on(self, square):
+        '''
+        Check what piece is on certain square
+
+        Args:
+            square (int): square to check for pieces
+
+        Returns:
+            (tuple): tuple containing:
+                     color (int): color of the piece on the square
+                     piecetype (int): type of the piece on the square
+        '''
+        for color in range(2):
+            for piecetype in range(6):
+                if get_bit(self.pieces[color][piecetype], square):
+                    return color, piecetype
+        return 100, 100
 #
-#         Args:
-#             square (int): square to check for pieces
+    def board_copy(self):
+        '''
+        Creates a copy of the board
+
+        Returns:
+            Board: Copy of the current board state
+        '''
+        new_board = Board()
+        for color in range(2):
+            for piecetype in range(6):
+                new_board.pieces[color][piecetype] = self.pieces[color][piecetype]
+        new_board.to_move = self.to_move
+        new_board.en_passant = self.en_passant
+        new_board.castling_black_kingside = self.castling_black_kingside
+        new_board.castling_black_queenside = self.castling_black_queenside
+        new_board.castling_white_kingside = self.castling_white_kingside
+        new_board.castling_white_queenside = self.castling_white_queenside
+        new_board.all_pieces = self.all_pieces
+        new_board.all_pieces_color[0] = self.all_pieces_color[0]
+        new_board.all_pieces_color[1] = self.all_pieces_color[1]
+        return new_board
+
+    def in_check(self, table, non_sliding):
+        '''
+        Check if current color to move is in check
+
+        Returns:
+            bool: True if color is in check, False otherwise
+        '''
+        return mvg.color_in_check(self, table, non_sliding)
 #
-#         Returns:
-#             (tuple): tuple containing:
-#                 color (int): color of the piece on the square
-#                 piecetype (int): type of the piece on the square
-#         '''
-#         for color, piecetype in itertools.product(range(2), range(6)):
-#             if self.pieces[color][piecetype][square]:
-#                 return color, piecetype
-#         return None, None
+    def in_check_after_move(self, move, table, non_sliding):
+        '''
+        Apllies a move to check if the color to move is in check afterwards
+
+        Args:
+            move (tuple): move given in the form (square_from, square_to, promotion)
+
+        Returns:
+            bool: True if check after move, False otherwise
+        '''
+        square_from, square_to, promotion = move
+        color, piece_to_move = self.piece_on(square_from)
+        tmp_board = self.board_copy()
+
+        tmp_board.update_piece(tmp_board.to_move, piece_to_move, square_from, square_to)
+
+        # check if capture:
+        if get_bit(tmp_board.all_pieces_color[1 - tmp_board.to_move], square_to):
+            for i in range(5):
+                tmp_board.pieces[1 - tmp_board.to_move][i] = unset_bit(tmp_board.pieces[1 - tmp_board.to_move][i], square_to)
+            tmp_board.all_pieces_color[1 - tmp_board.to_move] = unset_bit(tmp_board.all_pieces_color[1 - tmp_board.to_move], square_to)
+
+        # if en passant
+        if piece_to_move == 0 and get_bit(tmp_board.en_passant, square_to):
+            if tmp_board.to_move:
+                pawn_square = square_to - 8
+            else:
+                pawn_square = square_to + 8
+
+            tmp_board.pieces[1 - tmp_board.to_move][0] = unset_bit(tmp_board.pieces[1 - tmp_board.to_move][0], pawn_square)
+            tmp_board.all_pieces_color[1 - tmp_board.to_move] = unset_bit(tmp_board.all_pieces_color[1 - tmp_board.to_move], pawn_square)
+            tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, pawn_square)
+
+        return tmp_board.in_check(table, non_sliding)
 #
-#     def board_copy(self):
-#         '''
-#         Creates a copy of the board
-#
-#         Returns:
-#             Board: Copy of the current board state
-#         '''
-#         new_board = Board()
-#         for color, piecetype in itertools.product(range(2), range(6)):
-#             new_board.pieces[color][piecetype] = self.pieces[color][piecetype].copy()
-#         new_board.to_move = self.to_move
-#         new_board.en_passant = self.en_passant.copy()
-#         new_board.castling_rights = self.castling_rights.copy()
-#         new_board.all_pieces = self.all_pieces.copy()
-#         new_board.all_pieces_color[0] = self.all_pieces_color[0].copy()
-#         new_board.all_pieces_color[1] = self.all_pieces_color[1].copy()
-#         return new_board
-#
-#     def in_check(self):
-#         '''
-#         Check if current color to move is in check
-#
-#         Returns:
-#             bool: True if color is in check, False otherwise
-#         '''
-#         return mvg.color_in_check(self)
-#
-#     def in_check_after_move(self, move):
-#         '''
-#         Apllies a move to check if the color to move is in check afterwards
-#
-#         Args:
-#             move (tuple): move given in the form (square_from, square_to, promotion)
-#
-#         Returns:
-#             bool: True if check after move, False otherwise
-#         '''
-#         square_from, square_to, promotion = move
-#         color, piece_to_move = self.piece_on(square_from)
-#         tmp_board = self.board_copy()
-#
-#         tmp_board.update_piece(tmp_board.to_move, piece_to_move, square_from, square_to)
-#
-#         # check if capture:
-#         if tmp_board.all_pieces_color[1 - tmp_board.to_move][square_to]:
-#             for i in range(5):
-#                 tmp_board.pieces[1 - tmp_board.to_move][i][square_to] = 0
-#             tmp_board.all_pieces_color[1 - tmp_board.to_move][square_to] = 0
-#
-#         # if en passant
-#         if piece_to_move == 0 and tmp_board.en_passant[square_to]:
-#             if tmp_board.to_move:
-#                 pawn_square = square_to - 8
-#             else:
-#                 pawn_square = square_to + 8
-#
-#             tmp_board.pieces[1 - tmp_board.to_move][0][pawn_square] = 0
-#             tmp_board.all_pieces_color[1 - tmp_board.to_move][pawn_square] = 0
-#             tmp_board.all_pieces[pawn_square] = 0
-#
-#         return tmp_board.in_check()
-#
-#     def update_piece(self, color, piece, square_from, square_to):
-#         '''
-#         update position of a piece by setting pieces, all pieces and all pieces color
-#
-#         Args:
-#             color (int): color of the piece to update
-#             piece (int): piecetype of the piece to update
-#             square_from (int): index of the square the piece is coming from
-#             square_to (int): index of the square the piece is going to
-#         '''
-#         self.pieces[color][piece][square_from] = 0
-#         self.pieces[color][piece][square_to] = 1
-#
-#         self.all_pieces[square_from] = 0
-#         self.all_pieces[square_to] = 1
-#
-#         self.all_pieces_color[color][square_from] = 0
-#         self.all_pieces_color[color][square_to] = 1
-#
+
+    def update_piece(self, color, piece, square_from, square_to):
+        '''
+        update position of a piece by setting pieces, all pieces and all pieces color
+
+        Args:
+            color (int): color of the piece to update
+            piece (int): piecetype of the piece to update
+            square_from (int): index of the square the piece is coming from
+            square_to (int): index of the square the piece is going to
+        '''
+        #square_from = np.uint8(square_from)
+        #square_to = np.uint8(square_to)
+        #color = np.uint8(color)
+        #nif piece:
+        #    piece = np.uint8(piece)
+
+
+        self.pieces[color][piece] = unset_bit(self.pieces[color][piece], square_from)
+        self.pieces[color][piece] = set_bit(self.pieces[color][piece], square_to)
+
+        self.all_pieces = unset_bit(self.all_pieces, square_from)
+        self.all_pieces = set_bit(self.all_pieces, square_to)
+
+        self.all_pieces_color[color] = unset_bit(self.all_pieces_color[color], square_from)
+        self.all_pieces_color[color] = set_bit(self.all_pieces_color[color], square_to)
+
 #     def is_checkmate(self):
 #         '''
 #         Check if color to move is checkmate
@@ -479,31 +503,31 @@ class Board():
 #             return True
 #         return False
 #
-#     def update_castling_rights(self, move, piece_to_move):
-#         '''
-#         update casltling rights for a given move
-#
-#         Args:
-#             move (tuple): Move in the form (square_from, square_to, promotion)
-#             piece_to_move (int): The piece to move
-#         '''
-#         square_from, square_to, promotion = move
-#
-#         # if king moves update castling rights
-#         if piece_to_move == 5:
-#             if self.to_move:
-#                 self.castling_rights['white kingside'] = 0
-#                 self.castling_rights['white queenside'] = 0
-#             else:
-#                 self.castling_rights['black kingside'] = 0
-#                 self.castling_rights['black queenside'] = 0
-#
-#         # if rook moves or is captured update castling rights
-#         if square_from == 0 or square_to == 0:
-#             self.castling_rights['white queenside'] = 0
-#         elif square_from == 7 or square_to == 7:
-#             self.castling_rights['white kingside'] = 0
-#         elif square_from == 56 or square_to == 56:
-#             self.castling_rights['black queenside'] = 0
-#         elif square_from == 63 or square_to == 63:
-#             self.castling_rights['black kingside'] = 0
+    def update_castling_rights(self, move, piece_to_move):
+        '''
+        update casltling rights for a given move
+
+        Args:
+            move (tuple): Move in the form (square_from, square_to, promotion)
+            piece_to_move (int): The piece to move
+        '''
+        square_from, square_to, promotion = move
+
+        # if king moves update castling rights
+        if piece_to_move == 5:
+            if self.to_move:
+                self.castling_white_kingside = 0
+                self.castling_white_queenside = 0
+            else:
+                self.castling_black_kingside = 0
+                self.castling_black_queenside = 0
+
+        # if rook moves or is captured update castling rights
+        if square_from == 0 or square_to == 0:
+            self.castling_white_queenside = 0
+        elif square_from == 7 or square_to == 7:
+            self.castling_white_kingside = 0
+        elif square_from == 56 or square_to == 56:
+            self.castling_black_queenside = 0
+        elif square_from == 63 or square_to == 63:
+            self.castling_black_kingside = 0

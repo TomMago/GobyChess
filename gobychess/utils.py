@@ -23,7 +23,9 @@ def reverse_bit_scan(bitboard):
 
 @njit
 def get_bit(bitboard, bit):
-    return np.bitwise_and(bitboard, np.uint64(2**bit))
+    if np.bitwise_and(bitboard, np.uint64(2**bit)) == 0:
+        return 0
+    return 1
 
 
 @njit
@@ -145,6 +147,7 @@ def perft(current_board, depth):
     Returns
         int: number of moves
     '''
+
     number_moves = 0
     if not depth:
         return 1

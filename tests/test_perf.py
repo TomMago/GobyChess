@@ -8,28 +8,38 @@ from gmpy2 import xmpz
 from gobychess.board import Board
 from gobychess.utils import index_of_square, print_bitboard, bitboard_of_index
 import gobychess.movegen as mvg
+import time
 
 
 class PerftTests(unittest.TestCase):
     def setUp(self):
         self.board = Board()
         self.board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        self.table = mvg.generate_table()
+        self.non_sliding = mvg.generate_non_sliding()
 
     def _perft(self, current_board, depth):
         number_moves = 0
         if not depth:
             return 1
-        for move in current_board.gen_legal_moves():
+        for move in current_board.gen_legal_moves(self.table, self.non_sliding):
             new_board = current_board.board_copy()
             new_board = new_board.make_generated_move(move)
             number_moves += self._perft(new_board, depth - 1)
         return number_moves
 
-    # def test_perft(self):
-    #     self.assertEqual(self._perft(self.board, 1), 20)
-    #     self.assertEqual(self._perft(self.board, 2), 400)
-    #     self.assertEqual(self._perft(self.board, 3), 8902)
-    #     #self.assertEqual(self._perft(self.board, 4), 197_281)
+    def test_perft(self):
+        self.assertEqual(self._perft(self.board, 1), 20)
+        self.assertEqual(self._perft(self.board, 2), 400)
+        start = time.time()
+        self.assertEqual(self._perft(self.board, 3), 8902)
+        end = time.time()
+        print(end - start)
+        start = time.time()
+        self.assertEqual(self._perft(self.board, 4), 197_281)
+        end = time.time()
+        print(end - start)
+        self.assertEqual(1, 2)
     #     #self.assertEqual(self._perft(self.board, 5), 4_865_609)
     #
     # def test_perft_pos2(self):
