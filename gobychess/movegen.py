@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-from gmpy2 import bit_clear, bit_scan1, xmpz
-
-from .utils import (bitboard_of_index, invert_bitboard, print_bitboard,
-                    reverse_bit_scan1)
-
+from .utils import (bitboard_of_index, forward_bit_scan, invert_bitboard,
+                    print_bitboard, reverse_bit_scan, set_bit, unset_bit,
+                    get_bit)
 
 def generate_non_sliding():
     '''
@@ -37,14 +35,14 @@ def generate_white_pawn_move():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
         if i <= 7 or i >= 56:
             pass
         elif i // 8 == 1:
-            attack_board[i + 8] = 1
-            attack_board[i + 16] = 1
+            attack_board = set_bit(attack_board, i + 8)
+            attack_board = set_bit(attack_board, i + 16)
         else:
-            attack_board[i + 8] = 1
+            attack_board = set_bit(attack_board, i + 8)
         moves.append(attack_board)
     return moves
 
@@ -58,12 +56,12 @@ def generate_white_pawn_capture():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
         if i < 56:
             if (i % 8) != 0:
-                attack_board[i + 7] = 1
+                attack_board = set_bit(attack_board, i + 7)
             if (i + 1) % 8 != 0:
-                attack_board[i + 9] = 1
+                attack_board = set_bit(attack_board, i + 9)
         moves.append(attack_board)
     return moves
 
@@ -77,14 +75,14 @@ def generate_black_pawn_move():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
         if i <= 7 or i >= 56:
             pass
         elif i // 8 == 6:
-            attack_board[i - 8] = 1
-            attack_board[i - 16] = 1
+            attack_board = set_bit(attack_board, i - 8)
+            attack_board = set_bit(attack_board, i - 16)
         else:
-            attack_board[i - 8] = 1
+            attack_board = set_bit(attack_board, i - 8)
         moves.append(attack_board)
     return moves
 
@@ -98,12 +96,12 @@ def generate_black_pawn_capture():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
         if i > 7:
             if (i % 8) != 0:
-                attack_board[i - 9] = 1
+                attack_board = set_bit(attack_board, i - 9)
             if (i + 1) % 8 != 0:
-                attack_board[i - 7] = 1
+                attack_board = set_bit(attack_board, i - 7)
         moves.append(attack_board)
     return moves
 
@@ -117,23 +115,23 @@ def generate_king():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
         if (i + 1) % 8 != 0:
-            attack_board[i + 1] = 1
+            attack_board = set_bit(attack_board, i + 1)
         if i % 8 != 0:
-            attack_board[i - 1] = 1
+            attack_board = set_bit(attack_board, i - 1)
         if (i + 1) % 8 != 0 and (i + 9) <= 63:
-            attack_board[i + 9] = 1
+            attack_board = set_bit(attack_board, i + 9)
         if (i + 1) % 8 != 0 and (i - 7) > 0:
-            attack_board[i - 7] = 1
+            attack_board = set_bit(attack_board, i - 7)
         if (i + 8) <= 63:
-            attack_board[i + 8] = 1
+            attack_board = set_bit(attack_board, i + 8)
         if (i - 8) >= 0:
-            attack_board[i - 8] = 1
+            attack_board = set_bit(attack_board, i - 8)
         if i % 8 != 0 and (i + 7) <= 63:
-            attack_board[i + 7] = 1
+            attack_board = set_bit(attack_board, i + 7)
         if i % 8 != 0 and (i - 9) > 0:
-            attack_board[i - 9] = 1
+            attack_board = set_bit(attack_board, i - 9)
         moves.append(attack_board)
     return moves
 
@@ -147,7 +145,7 @@ def generate_knight():
     '''
     moves = []
     for i in range(64):
-        attack_board = xmpz(0b0)
+        attack_board = 0
 
         possible_directions = []
         if i % 8 > 0:
@@ -165,7 +163,7 @@ def generate_knight():
         for j in possible_directions:
             field = i + j
             if 0 <= field <= 63:
-                attack_board[field] = 1
+                attack_board = set_bit(attack_board, field)
         moves.append(attack_board)
     return moves
 
@@ -215,8 +213,8 @@ def generate_direction(direction):
     directions = []
     for i in range(64):
         field_count = i
-        attack_board = xmpz(0b0)
-        attack_board[i] = 0
+        attack_board = 0
+        attack_board = unset_bit(attack_board, i)
 
         if direction == +8:
             def condition(field):
@@ -245,7 +243,7 @@ def generate_direction(direction):
 
         while condition(field_count):
             field_count += direction
-            attack_board[field_count] = 1
+            attack_board = set_bit(attack_board, field_count)
 
         directions.append(attack_board)
 
@@ -267,25 +265,25 @@ def rook_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = xmpz(0b0)
+    attacks = 0
     attacks |= table['east'][square]
     if table['east'][square] & blockers:
-        idx = bit_scan1(table['east'][square] & blockers)
+        idx = forward_bit_scan(table['east'][square] & blockers)
         attacks = attacks & invert_bitboard(table['east'][idx])
 
     attacks |= table['north'][square]
     if table['north'][square] & blockers:
-        idx = bit_scan1(table['north'][square] & blockers)
+        idx = forward_bit_scan(table['north'][square] & blockers)
         attacks = attacks & invert_bitboard(table['north'][idx])
 
     attacks |= table['west'][square]
     if table['west'][square] & blockers:
-        idx = reverse_bit_scan1(table['west'][square] & blockers)
+        idx = reverse_bit_scan(table['west'][square] & blockers)
         attacks = attacks & invert_bitboard(table['west'][idx])
 
     attacks |= table['south'][square]
     if table['south'][square] & blockers:
-        idx = reverse_bit_scan1(table['south'][square] & blockers)
+        idx = reverse_bit_scan(table['south'][square] & blockers)
         attacks = attacks & invert_bitboard(table['south'][idx])
 
     return attacks
@@ -302,25 +300,25 @@ def bishop_sliding(square, blockers):
     Returns:
         xmpz bitboard of attacked squares
     '''
-    attacks = xmpz(0b0)
+    attacks = 0
     attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
-        idx = bit_scan1(table['north east'][square] & blockers)
+        idx = forward_bit_scan(table['north east'][square] & blockers)
         attacks = attacks & invert_bitboard(table['north east'][idx])
 
     attacks |= table['north west'][square]
     if table['north west'][square] & blockers:
-        idx = bit_scan1(table['north west'][square] & blockers)
+        idx = forward_bit_scan(table['north west'][square] & blockers)
         attacks = attacks & invert_bitboard(table['north west'][idx])
 
     attacks |= table['south west'][square]
     if table['south west'][square] & blockers:
-        idx = reverse_bit_scan1(table['south west'][square] & blockers)
+        idx = reverse_bit_scan(table['south west'][square] & blockers)
         attacks = attacks & invert_bitboard(table['south west'][idx])
 
     attacks |= table['south east'][square]
     if table['south east'][square] & blockers:
-        idx = reverse_bit_scan1(table['south east'][square] & blockers)
+        idx = reverse_bit_scan(table['south east'][square] & blockers)
         attacks = attacks & invert_bitboard(table['south east'][idx])
 
     return attacks
@@ -347,9 +345,9 @@ def yield_moveset(square, moveset):
     yield all moves of a piece from one square to all squares on a bitboard
     '''
     while moveset:
-        index_to = bit_scan1(moveset)
+        index_to = forward_bit_scan(moveset)
         yield (square, index_to, None)
-        moveset = moveset.bit_clear(index_to)
+        moveset = unset_bit(moveset, index_to)
 
 
 def yield_promotion_moveset(square, moveset):
@@ -357,10 +355,10 @@ def yield_promotion_moveset(square, moveset):
     yield all moves of a piece from one square to all squares on a bitboard
     '''
     while moveset:
-        index_to = bit_scan1(moveset)
+        index_to = forward_bit_scan(moveset)
         for i in [1, 2, 3, 4]:
             yield (square, index_to, i)
-        moveset = moveset.bit_clear(index_to)
+        moveset = unset_bit(moveset, index_to)
 
 
 def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
@@ -375,9 +373,9 @@ def gen_bishop_moves(bishop_bitboard, all_pieces, own_pieces):
         generator for all bishop moves gives 3 tuples (from, to, promote)
     '''
     while bishop_bitboard:
-        bishop_square = bit_scan1(bishop_bitboard)
+        bishop_square = forward_bit_scan(bishop_bitboard)
         attack_bitboard = bishop_sliding(bishop_square, all_pieces)
-        bishop_bitboard = bishop_bitboard.bit_clear(bishop_square)
+        bishop_bitboard = unset_bit(bishop_bitboard, bishop_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(bishop_square, moveset)
 
@@ -394,9 +392,9 @@ def gen_rook_moves(rook_bitboard, all_pieces, own_pieces):
         generator for all rook moves gives 3 tuples (from, to, promote)
     '''
     while rook_bitboard:
-        rook_square = bit_scan1(rook_bitboard)
+        rook_square = forward_bit_scan(rook_bitboard)
         attack_bitboard = rook_sliding(rook_square, all_pieces)
-        rook_bitboard = rook_bitboard.bit_clear(rook_square)
+        rook_bitboard = unset_bit(rook_bitboard, rook_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(rook_square, moveset)
 
@@ -413,9 +411,9 @@ def gen_queen_moves(queen_bitboard, all_pieces, own_pieces):
         generator for all queen moves gives 3 tuples (from, to, promote)
     '''
     while queen_bitboard:
-        queen_square = bit_scan1(queen_bitboard)
+        queen_square = forward_bit_scan(queen_bitboard)
         attack_bitboard = queen_sliding(queen_square, all_pieces)
-        queen_bitboard = queen_bitboard.bit_clear(queen_square)
+        queen_bitboard = unset_bit(queen_bitboard, queen_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(queen_square, moveset)
 
@@ -431,29 +429,29 @@ def gen_pawn_moves_white(pawn_bitboard, board):
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
     '''
-    seventhrow = xmpz(0b0000000011111111000000000000000000000000000000000000000000000000)
+    seventhrow = 0b0000000011111111000000000000000000000000000000000000000000000000
     pawns = pawn_bitboard & invert_bitboard(seventhrow)
     while pawns:
-        pawn_square = bit_scan1(pawns)
-        if not board.all_pieces[pawn_square + 8]:
+        pawn_square = forward_bit_scan(pawns)
+        if not get_bit(board.all_pieces, pawn_square + 8):
             yield from yield_moveset(pawn_square,
                                      non_sliding['pawn white move'][pawn_square]
                                      & invert_bitboard(board.all_pieces))
         yield from yield_moveset(pawn_square,
                                  non_sliding['pawn white capture'][pawn_square]
                                  & (board.all_pieces_color[0] | board.en_passant))
-        pawns = pawns.bit_clear(pawn_square)
+        pawns = unset_bit(pawns, pawn_square)
 
     pawns_seventh = pawn_bitboard & seventhrow
     while pawns_seventh:
-        pawn_square = bit_scan1(pawns_seventh)
+        pawn_square = forward_bit_scan(pawns_seventh)
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn white move'][pawn_square]
                                            & invert_bitboard(board.all_pieces))
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn white capture'][pawn_square]
                                            & board.all_pieces_color[0])
-        pawns_seventh = pawns_seventh.bit_clear(pawn_square)
+        pawns_seventh = unset_bit(pawns_seventh, pawn_square)
 
 
 def gen_pawn_moves_black(pawn_bitboard, board):
@@ -467,29 +465,29 @@ def gen_pawn_moves_black(pawn_bitboard, board):
     Returns:
         generator for all pawn moves gives 3 tuples (from, to, promote)
     '''
-    secondrow = xmpz(0b0000000000000000000000000000000000000000000000001111111100000000)
+    secondrow = 0b0000000000000000000000000000000000000000000000001111111100000000
     pawns = pawn_bitboard & invert_bitboard(secondrow)
     while pawns:
-        pawn_square = bit_scan1(pawns)
-        if not board.all_pieces[pawn_square - 8]:
+        pawn_square = forward_bit_scan(pawns)
+        if not get_bit(board.all_pieces, pawn_square - 8):
             yield from yield_moveset(pawn_square,
                                      non_sliding['pawn black move'][pawn_square]
                                      & invert_bitboard(board.all_pieces))
         yield from yield_moveset(pawn_square,
                                  non_sliding['pawn black capture'][pawn_square]
                                  & (board.all_pieces_color[1] | board.en_passant))
-        pawns = pawns.bit_clear(pawn_square)
+        pawns = unset_bit(pawns, pawn_square)
 
     pawns_second = pawn_bitboard & secondrow
     while pawns_second:
-        pawn_square = bit_scan1(pawns_second)
+        pawn_square = forward_bit_scan(pawns_second)
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn black move'][pawn_square]
                                            & invert_bitboard(board.all_pieces))
         yield from yield_promotion_moveset(pawn_square,
                                            non_sliding['pawn black capture'][pawn_square]
                                            & board.all_pieces_color[1])
-        pawns_second = pawns_second.bit_clear(pawn_square)
+        pawns_second = unset_bit(pawns_second, pawn_square)
 
 
 def gen_knight_moves(knight_bitboard, own_pieces):
@@ -504,9 +502,9 @@ def gen_knight_moves(knight_bitboard, own_pieces):
         generator for all knight moves gives 3 tuples (from, to, None)
     '''
     while knight_bitboard:
-        knight_square = bit_scan1(knight_bitboard)
+        knight_square = forward_bit_scan(knight_bitboard)
         attack_bitboard = non_sliding['knight'][knight_square]
-        knight_bitboard = knight_bitboard.bit_clear(knight_square)
+        knight_bitboard = unset_bit(knight_bitboard, knight_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(knight_square, moveset)
 
@@ -523,9 +521,9 @@ def gen_king_moves(king_bitboard, own_pieces):
         generator for all knight moves gives 3 tuples (from, to, None)
     '''
     while king_bitboard:
-        king_square = bit_scan1(king_bitboard)
+        king_square = forward_bit_scan(king_bitboard)
         attack_bitboard = non_sliding['king'][king_square]
-        king_bitboard = king_bitboard.bit_clear(king_square)
+        king_bitboard = unset_bit(king_bitboard ,king_square)
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(king_square, moveset)
 
@@ -617,7 +615,7 @@ def color_in_check(board):
     Returns:
         bool: True if color to move is in check, False otherwise
     '''
-    king_square = bit_scan1(board.pieces[board.to_move][5])
+    king_square = forward_bit_scan(board.pieces[board.to_move][5])
 
     opponent_color = 1 - board.to_move
 
@@ -653,7 +651,7 @@ def check_white_castle_kingside(board):
     if not board.castling_rights['white kingside']:
         return False
 
-    if board.all_pieces[5] == 1 or board.all_pieces[6] == 1:
+    if get_bit(board.all_pieces, 5) == 1 or get_bit(board.all_pieces, 6) == 1:
         return False
 
     if board.in_check():
@@ -663,14 +661,14 @@ def check_white_castle_kingside(board):
 
     for i in [5, 6]:
 
-        tmp_board.pieces[1][5][i-1] = 0
-        tmp_board.pieces[1][5][i] = 1
+        tmp_board.pieces[1][5] = unset_bit(tmp_board.pieces[1][5], i-1)
+        tmp_board.pieces[1][5] = set_bit(tmp_board.pieces[1][5], i)
 
-        tmp_board.all_pieces[i-1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i-1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[1][i-1] = 0
-        tmp_board.all_pieces_color[1][i] = 1
+        tmp_board.all_pieces_color[1] = unset_bit(tmp_board.all_pieces_color[1], i-1)
+        tmp_board.all_pieces_color[1] = set_bit(tmp_board.all_pieces_color[1], i)
 
         if tmp_board.in_check():
             return False
@@ -691,7 +689,7 @@ def check_white_castle_queenside(board):
     if not board.castling_rights['white queenside']:
         return False
 
-    if board.all_pieces[3] == 1 or board.all_pieces[2] == 1 or board.all_pieces[1] == 1:
+    if get_bit(board.all_pieces, 3) == 1 or get_bit(board.all_pieces, 2) == 1 or get_bit(board.all_pieces, 1) == 1:
         return False
 
     if board.in_check():
@@ -700,14 +698,14 @@ def check_white_castle_queenside(board):
     tmp_board = board.board_copy()
 
     for i in [3, 2]:
-        tmp_board.pieces[1][5][i+1] = 0
-        tmp_board.pieces[1][5][i] = 1
+        tmp_board.pieces[1][5] = unset_bit(tmp_board.pieces[1][5], i+1)
+        tmp_board.pieces[1][5] = set_bit(tmp_board.pieces[1][5], i)
 
-        tmp_board.all_pieces[i+1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i+1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[1][i+1] = 0
-        tmp_board.all_pieces_color[1][i] = 1
+        tmp_board.all_pieces_color[1] = unset_bit(tmp_board.all_pieces_color[1], i+1)
+        tmp_board.all_pieces_color[1] = set_bit(tmp_board.all_pieces_color[1], i)
 
         if tmp_board.in_check():
             return False
@@ -727,7 +725,7 @@ def check_black_castle_kingside(board):
     if not board.castling_rights['black kingside']:
         return False
 
-    if board.all_pieces[61] == 1 or board.all_pieces[62] == 1:
+    if get_bit(board.all_pieces, 61) == 1 or get_bit(board.all_pieces, 62) == 1:
         return False
 
     if board.in_check():
@@ -737,14 +735,14 @@ def check_black_castle_kingside(board):
 
     for i in [61, 62]:
 
-        tmp_board.pieces[0][5][i-1] = 0
-        tmp_board.pieces[0][5][i] = 1
+        tmp_board.pieces[0][5] = unset_bit(tmp_board.pieces[0][5], i-1)
+        tmp_board.pieces[0][5] = set_bit(tmp_board.pieces[0][5], i)
 
-        tmp_board.all_pieces[i-1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i-1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
 
-        tmp_board.all_pieces_color[0][i-1] = 0
-        tmp_board.all_pieces_color[0][i] = 1
+        tmp_board.all_pieces_color[0] = unset_bit(tmp_board.all_pieces_color[0], i-1)
+        tmp_board.all_pieces_color[0] = set_bit(tmp_board.all_pieces_color[0], i)
 
         if tmp_board.in_check():
             return False
@@ -764,7 +762,7 @@ def check_black_castle_queenside(board):
     if not board.castling_rights['black queenside']:
         return False
 
-    if board.all_pieces[59] == 1 or board.all_pieces[58] == 1 or board.all_pieces[57] == 1:
+    if get_bit(board.all_pieces, 59) == 1 or get_bit(board.all_pieces, 58) == 1 or get_bit(board.all_pieces, 57) == 1:
         return False
 
     if board.in_check():
@@ -773,14 +771,15 @@ def check_black_castle_queenside(board):
     tmp_board = board.board_copy()
 
     for i in [59, 58]:
-        tmp_board.pieces[0][5][i+1] = 0
-        tmp_board.pieces[0][5][i] = 1
 
-        tmp_board.all_pieces[i+1] = 0
-        tmp_board.all_pieces[i] = 1
+        tmp_board.pieces[0][5] = unset_bit(tmp_board.pieces[0][5], i+1)
+        tmp_board.pieces[0][5] = set_bit(tmp_board.pieces[0][5], i)
 
-        tmp_board.all_pieces_color[0][i+1] = 0
-        tmp_board.all_pieces_color[0][i] = 1
+        tmp_board.all_pieces = unset_bit(tmp_board.all_pieces, i+1)
+        tmp_board.all_pieces = set_bit(tmp_board.all_pieces, i)
+
+        tmp_board.all_pieces_color[0] = unset_bit(tmp_board.all_pieces_color[0], i+1)
+        tmp_board.all_pieces_color[0] = set_bit(tmp_board.all_pieces_color[0], i)
 
         if tmp_board.in_check():
             return False

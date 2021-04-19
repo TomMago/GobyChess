@@ -2,8 +2,6 @@
 
 import unittest
 
-from gmpy2 import xmpz
-
 from gobychess.board import Board
 import gobychess.movegen as mvg
 from gobychess.utils import bitboard_of_square, index_of_square, bitboard_from_squares, print_bitboard

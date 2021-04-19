@@ -4,7 +4,6 @@ Perft test cases, positions 1-6 taken from https://www.chessprogramming.org/Perf
 
 import unittest
 
-from gmpy2 import xmpz
 from gobychess.board import Board
 from gobychess.utils import index_of_square, print_bitboard, bitboard_of_index
 import gobychess.movegen as mvg

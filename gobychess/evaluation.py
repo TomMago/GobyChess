@@ -3,8 +3,7 @@
 import itertools
 
 from .board import Board
-
-from gmpy2 import popcount, bit_scan1
+from .utils import forward_bit_scan, reverse_bit_scan, unset_bit
 
 MATE_SCORE = 100
 
@@ -83,7 +82,8 @@ def piece_scores(board):
 
     score = 0
     for color, piece in itertools.product(range(2), range(6)):
-        score += (-1)**color * popcount(board.pieces[1 - color][piece]) * piece_score[piece]
+        #score += (-1)**color * popcount(board.pieces[1 - color][piece]) * piece_score[piece]
+        pass
 
     return score
 
@@ -105,16 +105,16 @@ def weighted_piece_scores(board):
     score = 0
     for piece in range(6):
         # white
-        bitboard = board.pieces[1][piece].copy()
+        bitboard = board.pieces[1][piece]
         while bitboard:
-            square = bit_scan1(bitboard)
+            square = forward_bit_scan(bitboard)
             score += piece_score[piece] * square_score_table[piece][square]
-            bitboard[square] = 0
+            bitboard = unset_bit(bitboard, square)
 
-        bitboard = board.pieces[0][piece].copy()
+        bitboard = board.pieces[0][piece]
         while bitboard:
-            square = bit_scan1(bitboard)
+            square = forward_bit_scan(bitboard)
             score -= piece_score[piece] * square_score_table[piece][63 - square]
-            bitboard[square] = 0
+            bitboard = unset_bit(bitboard, square)
 
     return score

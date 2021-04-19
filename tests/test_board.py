@@ -2,7 +2,6 @@
 
 import unittest
 
-from gmpy2 import xmpz
 from gobychess.board import Board
 from gobychess.utils import (bitboard_of_index, bitboard_of_square,
                              index_of_square, print_bitboard, move_from_san)
@@ -24,11 +23,11 @@ class BoardTests(unittest.TestCase):
         self.assertEqual(self.board.castling_rights['white queenside'], 0)
         self.assertEqual(self.board.castling_rights['black kingside'], 0)
         self.assertEqual(self.board.castling_rights['black queenside'], 1)
-        self.assertEqual(self.board.en_passant, xmpz(0))
+        self.assertEqual(self.board.en_passant, 0)
         self.assertEqual(self.board.halfmove_clock, 2)
         self.assertEqual(self.board.fullmove_counter, 10)
         self.assertEqual(self.board.pieces[0][0],
-                         xmpz(0b00000000011000111000000000001000000000000000000000000000000000000))
+                         0b00000000011000111000000000001000000000000000000000000000000000000)
         self.assertEqual(self.board.pieces[0][1],
                          bitboard_of_square('f6') | bitboard_of_square('d4'))
         self.assertEqual(self.board.pieces[0][2],
@@ -41,7 +40,7 @@ class BoardTests(unittest.TestCase):
                          bitboard_of_square('e8'))
 
         self.assertEqual(self.board.pieces[1][0],
-                         xmpz(0b00000000000000000000000000000100000000000000001001100101100000000))
+                         0b00000000000000000000000000000100000000000000001001100101100000000)
         self.assertEqual(self.board.pieces[1][1],
                          bitboard_of_square('b1') | bitboard_of_square('h8'))
         self.assertEqual(self.board.pieces[1][2],

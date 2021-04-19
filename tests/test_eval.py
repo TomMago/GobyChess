@@ -3,8 +3,6 @@
 
 import unittest
 
-from gmpy2 import xmpz
-
 from gobychess.board import Board
 from gobychess.evaluation import piece_scores
 

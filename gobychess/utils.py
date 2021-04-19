@@ -2,7 +2,38 @@
 
 from textwrap import wrap
 
-from gmpy2 import xmpz
+
+def forward_bit_scan(bitboard):
+    i = 0
+    while((bitboard >> i) % 2 == 0):
+        i += 1
+    return i
+
+def reverse_bit_scan(bitboard):
+    i = 63
+    while((bitboard >> i) % 2 == 0):
+        i -= 1
+    return i
+
+def get_bit(bitboard, bit):
+    if bitboard & 2**bit == 0:
+        return 0
+    return 1
+
+
+def unset_bit(bitboard, bit):
+    '''
+    sets bit at position bit of bitboard to 1
+    '''
+    return bitboard & invert_bitboard(2**bit)
+
+
+def set_bit(bitboard, bit):
+    '''
+    sets bit at position bit of bitboard to 1
+    '''
+    return bitboard | 2**bit
+
 
 
 def print_bitboard(board):
@@ -39,9 +70,7 @@ def bitboard_of_index(index):
     Returns:
         xmpz: bitboard with bit at idnex set to 1
     '''
-    empty_bitboard = xmpz(0b0)
-    empty_bitboard[index] = 1
-    return empty_bitboard
+    return 2**index
 
 
 def index_of_square(square):
@@ -71,9 +100,7 @@ def bitboard_of_square(square):
         xmpz: Bitboard with 1 on respective square
     '''
     idx = index_of_square(square)
-    empty_bitboard = xmpz(0b0)
-    empty_bitboard[idx] = 1
-    return empty_bitboard
+    return 2**idx
 
 
 def bitboard_from_squares(squares):
@@ -86,11 +113,11 @@ def bitboard_from_squares(squares):
     Returns:
         xmpz: Bitboard with 1 on respective squares
     '''
-    empty_bitboard = xmpz(0b0)
+    empty_bitboard = 0
     squares = squares.split()
     for square in squares:
         idx = index_of_square(square)
-        empty_bitboard[idx] = 1
+        empty_bitboard += 2**idx
     return empty_bitboard
 
 
@@ -104,6 +131,7 @@ def invert_bitboard(bitboard):
     Returns
         xmpz: inverted bitboard, 0 and 1 switched for all bits
     '''
+    # Alternative (~bitboard & 0xFFFF_FFFF_FFFF_FFFF)
     return (1 << 64) - 1 - bitboard
 
 
