@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 from .board import Board
-from .utils import move_from_san, san_from_move
 from .search import Searcher
+from .utils import move_from_san, san_from_move
+
 
 def main():
 
     board = Board()
+
+    search = Searcher(aim_depth=3)
 
     while True:
         command = input()
@@ -53,10 +56,9 @@ def main():
                 board.make_generated_move(move_from_san(move))
 
         elif command.startswith('go'):
-            s = Searcher(aim_depth=3)
-            evaluation = s.search_alpha_beta(board)
+            evaluation = search.search_alpha_beta(board)
             #evaluation, best_move = simple_min_max(board)
-            print(f'bestmove {san_from_move(s.best_move)}')
+            print(f'bestmove {san_from_move(search.best_move)}')
 
         else:
             pass

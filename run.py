@@ -3,11 +3,11 @@
 
 import timeit
 
-from gmpy2 import xmpz
-
 import gobychess
 from gobychess.board import Board
+from gobychess.uci import main
 
+main()
 
 #moveset = xmpz(0b0000000000000000000000000000000000000000000000000000000001001100)
 #print(list(yield_moveset(22, moveset)))
@@ -63,8 +63,3 @@ from gobychess.board import Board
 #print(gobychess.utils.forward_bit_scan(y))
 #gobychess.utils.print_bitboard(np.bitwise_and(x,np.bitwise_not(y)))
 
-
-
-for i in gobychess.movegen.generate_direction(1):
-    gobychess.utils.print_bitboard(i)
-    print()

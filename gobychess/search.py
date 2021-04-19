@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from .evaluation import piece_scores, weighted_piece_scores
+from .movegen import generate_non_sliding, generate_table
+
 
 class Searcher:
     '''
@@ -17,6 +19,8 @@ class Searcher:
         self.best_move = (None, None, None)
         self.evaluation = 0
         self.aim_depth = aim_depth
+        self.table = generate_table()
+        self.non_sliding = generate_non_sliding()
 
 
     def search_min_max(self, board):
@@ -66,7 +70,7 @@ class Searcher:
         return evaluation
 
     def __alpha_beta_max(self, board, depth, alpha, beta):
-        moves = board.gen_legal_moves()
+        moves = board.gen_legal_moves(self.table, self.non_sliding)
         if depth == 0 or board.is_checkmate() or board.is_stalemate():
             return weighted_piece_scores(board)
         max_eval = alpha
@@ -86,7 +90,7 @@ class Searcher:
 
 
     def __alpha_beta_min(self, board, depth, alpha, beta):
-        moves = board.gen_legal_moves()
+        moves = board.gen_legal_moves(self.table, self.non_sliding)
         if depth == 0 or board.is_checkmate() or board.is_stalemate():
             return weighted_piece_scores(board)
         min_eval = beta
