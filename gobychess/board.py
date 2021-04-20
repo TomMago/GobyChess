@@ -23,20 +23,8 @@ class Board():
         fullmove_clock (int): counter of full moves
     '''
     def __init__(self):
-        self.pieces = [[], []]
-        self.pieces[0] = [0,
-                          0,
-                          0,
-                          0,
-                          0,
-                          0]
+        self.pieces = [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]
 
-        self.pieces[1] = [0,
-                          0,
-                          0,
-                          0,
-                          0,
-                          0]
         self.to_move = 1
         self.castling_rights = {'white kingside': 1, 'white queenside': 1,
                                 'black kingside': 1, 'black queenside': 1}
@@ -45,11 +33,10 @@ class Board():
         self.halfmove_clock = 0
         self.fullmove_counter = 1
 
-        self.all_pieces_color = [0,
-                                 0]
+        self.all_pieces_color = [0, 0]
         self.all_pieces = 0
 
-        self.update_all_pieces()
+        #self.update_all_pieces()
 
     def from_fen(self, fen):
         '''
@@ -172,7 +159,7 @@ class Board():
         '''
         # check if indices in bound
         square_from, square_to, promotion = move
-        color, piece_to_move = self.piece_on(square_from)
+        piece_to_move = self.piece_on(square_from)
         if not 0 <= square_from <= 63 or not 0 <= square_to <= 63:
             raise IndexError("Square outside the Board")
         # check if a piece (and which) is on square from
@@ -245,15 +232,14 @@ class Board():
             move (tuple): Tuple containing (square from, square to, pomotion)
         '''
         square_from, square_to, promotion = move
-        color, piece_to_move = self.piece_on(square_from)
+        piece_to_move = self.piece_on(square_from)
 
         # update bbs for moving piece
         self.update_piece(self.to_move, piece_to_move, square_from, square_to)
 
         # check if move is capture:
         if get_bit(self.all_pieces_color[1 - self.to_move], square_to):
-            for i in range(5):
-                self.pieces[1 - self.to_move][i] = unset_bit(self.pieces[1 - self.to_move][i], square_to)
+            self.pieces[1 - self.to_move] = [unset_bit(piece, square_to) for piece in self.pieces[1 - self.to_move]]
             self.all_pieces_color[1 - self.to_move] = unset_bit(self.all_pieces_color[1 - self.to_move], square_to)
 
         # set square of captured pawn
@@ -347,10 +333,9 @@ class Board():
                 color (int): color of the piece on the square
                 piecetype (int): type of the piece on the square
         '''
-        for color, piecetype in itertools.product(range(2), range(6)):
-            if get_bit(self.pieces[color][piecetype], square):
-                return color, piecetype
-        return None, None
+        iterator = (p for p in range(6) if get_bit(self.pieces[self.to_move][p], square))
+        piece = next(iterator, None)
+        return piece
 
     def board_copy(self):
         '''
@@ -361,14 +346,16 @@ class Board():
         '''
         new_board = Board()
         #new_board.pieces = self.pieces.copy()
-        for color, piecetype in itertools.product(range(2), range(6)):
-            new_board.pieces[color][piecetype] = self.pieces[color][piecetype]
+        new_board.pieces = [row[:] for row in self.pieces]
+        #for color, piecetype in itertools.product(range(2), range(6)):
+        #    new_board.pieces[color][piecetype] = self.pieces[color][piecetype]
         new_board.to_move = self.to_move
         new_board.en_passant = self.en_passant
         new_board.castling_rights = self.castling_rights.copy()
         new_board.all_pieces = self.all_pieces
-        new_board.all_pieces_color[0] = self.all_pieces_color[0]
-        new_board.all_pieces_color[1] = self.all_pieces_color[1]
+        new_board.all_pieces_color = self.all_pieces_color.copy()
+        #new_board.all_pieces_color[0] = self.all_pieces_color[0]
+        #new_board.all_pieces_color[1] = self.all_pieces_color[1]
         return new_board
 
     def in_check(self):
@@ -391,15 +378,14 @@ class Board():
             bool: True if check after move, False otherwise
         '''
         square_from, square_to, promotion = move
-        color, piece_to_move = self.piece_on(square_from)
+        piece_to_move = self.piece_on(square_from)
         tmp_board = self.board_copy()
 
         tmp_board.update_piece(tmp_board.to_move, piece_to_move, square_from, square_to)
 
         # check if capture:
         if get_bit(tmp_board.all_pieces_color[1 - tmp_board.to_move], square_to):
-            for i in range(5):
-                tmp_board.pieces[1 - tmp_board.to_move][i] = unset_bit(tmp_board.pieces[1 - tmp_board.to_move][i], square_to)
+            tmp_board.pieces[1 - tmp_board.to_move] = [unset_bit(piece, square_to) for piece in self.pieces[1- tmp_board.to_move]]
             tmp_board.all_pieces_color[1 - tmp_board.to_move] = unset_bit(tmp_board.all_pieces_color[1 - tmp_board.to_move], square_to)
 
         # if en passant
@@ -441,7 +427,7 @@ class Board():
         Returns:
             bool: True if it is Checkmate, False otherwise
         '''
-        if self.in_check() and not list(self.gen_legal_moves()):
+        if self.in_check() and not next(self.gen_legal_moves(), False):
             return True
         return False
 
@@ -452,7 +438,7 @@ class Board():
         Returns:
             bool: True if stalemate, False otherwise
         '''
-        if not self.in_check() and not list(self.gen_legal_moves()):
+        if not self.in_check() and not next(self.gen_legal_moves(), False):
             return True
         return False
 

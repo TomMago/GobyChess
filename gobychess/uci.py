@@ -53,7 +53,7 @@ def main():
                 board.make_generated_move(move_from_san(move))
 
         elif command.startswith('go'):
-            s = Searcher(aim_depth=3)
+            s = Searcher(aim_depth=4)
             evaluation = s.search_alpha_beta(board)
             #evaluation, best_move = simple_min_max(board)
             print(f'bestmove {san_from_move(s.best_move)}')

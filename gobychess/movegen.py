@@ -269,22 +269,22 @@ def rook_sliding(square, blockers):
     attacks |= table['east'][square]
     if table['east'][square] & blockers:
         idx = forward_bit_scan(table['east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['east'][idx])
+        attacks &= invert_bitboard(table['east'][idx])
 
     attacks |= table['north'][square]
     if table['north'][square] & blockers:
         idx = forward_bit_scan(table['north'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north'][idx])
+        attacks &= invert_bitboard(table['north'][idx])
 
     attacks |= table['west'][square]
     if table['west'][square] & blockers:
         idx = reverse_bit_scan(table['west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['west'][idx])
+        attacks &= invert_bitboard(table['west'][idx])
 
     attacks |= table['south'][square]
     if table['south'][square] & blockers:
         idx = reverse_bit_scan(table['south'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south'][idx])
+        attacks &= invert_bitboard(table['south'][idx])
 
     return attacks
 
@@ -304,22 +304,22 @@ def bishop_sliding(square, blockers):
     attacks |= table['north east'][square]
     if table['north east'][square] & blockers:
         idx = forward_bit_scan(table['north east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north east'][idx])
+        attacks &= invert_bitboard(table['north east'][idx])
 
     attacks |= table['north west'][square]
     if table['north west'][square] & blockers:
         idx = forward_bit_scan(table['north west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['north west'][idx])
+        attacks &= invert_bitboard(table['north west'][idx])
 
     attacks |= table['south west'][square]
     if table['south west'][square] & blockers:
         idx = reverse_bit_scan(table['south west'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south west'][idx])
+        attacks &= invert_bitboard(table['south west'][idx])
 
     attacks |= table['south east'][square]
     if table['south east'][square] & blockers:
         idx = reverse_bit_scan(table['south east'][square] & blockers)
-        attacks = attacks & invert_bitboard(table['south east'][idx])
+        attacks &= invert_bitboard(table['south east'][idx])
 
     return attacks
 

@@ -4,36 +4,28 @@ from textwrap import wrap
 
 
 def forward_bit_scan(bitboard):
-    i = 0
-    while((bitboard >> i) % 2 == 0):
-        i += 1
-    return i
+    return reverse_bit_scan(bitboard & -bitboard)
+
 
 def reverse_bit_scan(bitboard):
-    i = 63
-    while((bitboard >> i) % 2 == 0):
-        i -= 1
-    return i
+    return bitboard.bit_length() - 1
+
 
 def get_bit(bitboard, bit):
-    if bitboard & 2**bit == 0:
-        return 0
-    return 1
-
+    return (bitboard & (1 << bit))!=0
 
 def unset_bit(bitboard, bit):
     '''
     sets bit at position bit of bitboard to 1
     '''
-    return bitboard & invert_bitboard(2**bit)
+    return bitboard & ~(1 << bit)
 
 
 def set_bit(bitboard, bit):
     '''
     sets bit at position bit of bitboard to 1
     '''
-    return bitboard | 2**bit
-
+    return bitboard | (1 << bit)
 
 
 def print_bitboard(board):
@@ -70,7 +62,7 @@ def bitboard_of_index(index):
     Returns:
         xmpz: bitboard with bit at idnex set to 1
     '''
-    return 2**index
+    return (1 << index)
 
 
 def index_of_square(square):
@@ -131,7 +123,6 @@ def invert_bitboard(bitboard):
     Returns
         xmpz: inverted bitboard, 0 and 1 switched for all bits
     '''
-    # Alternative (~bitboard & 0xFFFF_FFFF_FFFF_FFFF)
     return (1 << 64) - 1 - bitboard
 
 

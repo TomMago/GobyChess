@@ -59,7 +59,7 @@ class PerftTests(unittest.TestCase):
         self.board.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
         self.assertEqual(self._perft(self.board, 1), 44)
         self.assertEqual(self._perft(self.board, 2), 1486)
-        #self.assertEqual(self._perft(self.board, 3), 62_379)
+        self.assertEqual(self._perft(self.board, 3), 62_379)
         #self.assertEqual(self._perft(self.board, 4), 2_103_487)
         #self.assertEqual(self._perft(self.board, 5), 89_941_194)
 
@@ -75,4 +75,4 @@ class PerftTests(unittest.TestCase):
         self.assertEqual(self._perft(self.board, 1), 13)
         self.assertEqual(self._perft(self.board, 2), 205)
         self.assertEqual(self._perft(self.board, 3), 2250)
-        #self.assertEqual(self._perft(self.board, 4), 40097)
+        self.assertEqual(self._perft(self.board, 4), 40097)

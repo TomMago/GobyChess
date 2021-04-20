@@ -65,9 +65,10 @@ class BoardTests(unittest.TestCase):
         #print("e2e4")
         test_board.make_generated_move((index_of_square('e2'), index_of_square('e4'), None))
         self.assertEqual(test_board.to_move, 0)
-        #self.assertEqual(test_board.en_passant, 20)
-        self.assertEqual(test_board.piece_on(28), (1, 0))
-        self.assertEqual(test_board.piece_on(12), (None, None))
+        self.assertEqual(test_board.piece_on(28), None)
+        self.assertEqual(test_board.piece_on(52), 0)
+        self.assertEqual(test_board.piece_on(63), 3)
+        self.assertEqual(test_board.piece_on(12), None)
         self.assertEqual(test_board.fullmove_counter, 1)
         self.assertEqual(test_board.halfmove_clock, 0)
 
