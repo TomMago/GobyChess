@@ -10,8 +10,8 @@ from . import movegen as mvg
 from .utils import bitboard_of_index, bitboard_of_square, print_bitboard, set_bit, unset_bit, get_bit
 
 
-class Board():
-    '''
+class Board:
+    """
     Class representing the state of a chess game
 
     Attributes:
@@ -21,7 +21,8 @@ class Board():
         en_passant (xmpz): bitboard of the en passant square
         halfmove_clock (int): counter of halfmoves
         fullmove_clock (int): counter of full moves
-    '''
+    """
+
     def __init__(self):
         self.pieces = [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]]
 
@@ -39,12 +40,12 @@ class Board():
         #self.update_all_pieces()
 
     def from_fen(self, fen):
-        '''
+        """
         Set board to fen position
 
         Args:
             fen (string): string containing the fen position
-        '''
+        """
         self.pieces[0] = [0,
                           0,
                           0,
@@ -57,7 +58,6 @@ class Board():
                           0,
                           0,
                           0]
-
         words = fen.split()
 
         if words[1] == 'w':
@@ -117,9 +117,9 @@ class Board():
         self.update_all_pieces()
 
     def __str__(self):
-        '''
+        """
         Print current position
-        '''
+        """
         board_str = "." * 64
         board_str = list(board_str)
 
@@ -151,12 +151,12 @@ class Board():
                                              self.fullmove_counter)
 
     def make_move(self, move):
-        '''
+        """
         Apply move to board, check if move is valid
 
         Args:
             move (tuple): Tuple containing (square from, square to, promotion)
-        '''
+        """
         # check if indices in bound
         square_from, square_to, promotion = move
         piece_to_move = self.piece_on(square_from)
@@ -223,14 +223,13 @@ class Board():
 
         return self
 
-
     def make_generated_move(self, move):
-        '''
+        """
         Apply generated move to board (no check for validity of the move)
 
         Args:
             move (tuple): Tuple containing (square from, square to, pomotion)
-        '''
+        """
         square_from, square_to, promotion = move
         piece_to_move = self.piece_on(square_from)
 
@@ -295,19 +294,19 @@ class Board():
         return self
 
     def gen_legal_moves(self):
-        '''
+        """
         Generates all legal moves for the color to move in the current position
 
         Returns:
             iterable of the legal moves
-        '''
+        """
         return itertools.filterfalse(lambda moves: self.in_check_after_move(moves),
                                      mvg.generate_moves(self))
 
     def update_all_pieces(self):
-        '''
+        """
         Update the bitboards containing positions of all pieces
-        '''
+        """
         self.all_pieces = 0
         self.all_pieces_color[0] = 0
         self.all_pieces_color[1] = 0
@@ -322,7 +321,7 @@ class Board():
         self.all_pieces |= self.all_pieces_color[1]
 
     def piece_on(self, square):
-        '''
+        """
         Check what piece is on certain square
 
         Args:
@@ -332,18 +331,18 @@ class Board():
             (tuple): tuple containing:
                 color (int): color of the piece on the square
                 piecetype (int): type of the piece on the square
-        '''
+        """
         iterator = (p for p in range(6) if get_bit(self.pieces[self.to_move][p], square))
         piece = next(iterator, None)
         return piece
 
     def board_copy(self):
-        '''
+        """
         Creates a copy of the board
 
         Returns:
             Board: Copy of the current board state
-        '''
+        """
         new_board = Board()
         #new_board.pieces = self.pieces.copy()
         new_board.pieces = [row[:] for row in self.pieces]
@@ -359,16 +358,16 @@ class Board():
         return new_board
 
     def in_check(self):
-        '''
+        """
         Check if current color to move is in check
 
         Returns:
             bool: True if color is in check, False otherwise
-        '''
+        """
         return mvg.color_in_check(self)
 
     def in_check_after_move(self, move):
-        '''
+        """
         Apllies a move to check if the color to move is in check afterwards
 
         Args:
@@ -376,7 +375,7 @@ class Board():
 
         Returns:
             bool: True if check after move, False otherwise
-        '''
+        """
         square_from, square_to, promotion = move
         piece_to_move = self.piece_on(square_from)
         tmp_board = self.board_copy()
@@ -402,7 +401,7 @@ class Board():
         return tmp_board.in_check()
 
     def update_piece(self, color, piece, square_from, square_to):
-        '''
+        """
         update position of a piece by setting pieces, all pieces and all pieces color
 
         Args:
@@ -410,7 +409,7 @@ class Board():
             piece (int): piecetype of the piece to update
             square_from (int): index of the square the piece is coming from
             square_to (int): index of the square the piece is going to
-        '''
+        """
         self.pieces[color][piece] = unset_bit(self.pieces[color][piece], square_from)
         self.pieces[color][piece] = set_bit(self.pieces[color][piece], square_to)
 
@@ -421,35 +420,36 @@ class Board():
         self.all_pieces_color[color] = set_bit(self.all_pieces_color[color], square_to)
 
     def is_checkmate(self):
-        '''
+        """
         Check if color to move is checkmate
 
         Returns:
             bool: True if it is Checkmate, False otherwise
-        '''
+
+        """
         if self.in_check() and not next(self.gen_legal_moves(), False):
             return True
         return False
 
     def is_stalemate(self):
-        '''
+        """
         Check if color to move is stalemate
 
         Returns:
             bool: True if stalemate, False otherwise
-        '''
+        """
         if not self.in_check() and not next(self.gen_legal_moves(), False):
             return True
         return False
 
     def update_castling_rights(self, move, piece_to_move):
-        '''
+        """
         update casltling rights for a given move
 
         Args:
             move (tuple): Move in the form (square_from, square_to, promotion)
             piece_to_move (int): The piece to move
-        '''
+        """
         square_from, square_to, promotion = move
 
         # if king moves update castling rights
@@ -470,7 +470,6 @@ class Board():
             self.castling_rights['black queenside'] = 0
         elif square_from == 63 or square_to == 63:
             self.castling_rights['black kingside'] = 0
-
 
     def reset_board(self):
         self.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")

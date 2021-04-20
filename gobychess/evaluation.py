@@ -66,8 +66,9 @@ square_score_table = {
          0.97, 1.01, 1.01, 0.99, 0.97, 0.98, 1.  , 1.01)
 
 }
+
 def piece_scores(board):
-    '''
+    """
     Calculate board score with only piece values
 
     Args:
@@ -75,11 +76,11 @@ def piece_scores(board):
 
     Returns:
         float: score of current position
-    '''
+    """
     piece_score = {0: 1, 1: 3, 2: 3, 3: 5, 4: 9, 5: 0}
 
     if board.is_checkmate():
-        return (-1)**board.to_move * MATE_SCORE
+        return (-1) ** board.to_move * MATE_SCORE
 
     score = 0
     for color, piece in itertools.product(range(2), range(6)):
@@ -88,8 +89,9 @@ def piece_scores(board):
 
     return score
 
+
 def weighted_piece_scores(board):
-    '''
+    """
     Calculate board score with only piece values
 
     Args:
@@ -97,11 +99,11 @@ def weighted_piece_scores(board):
 
     Returns:
         float: score of current position
-    '''
+    """
     piece_score = {0: 1, 1: 3, 2: 3, 3: 5, 4: 9, 5: 20}
 
     if board.is_checkmate():
-        return (-1)**board.to_move * MATE_SCORE
+        return (-1) ** board.to_move * MATE_SCORE
 
     score = 0
     for piece in range(6):

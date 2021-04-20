@@ -4,6 +4,7 @@ from .board import Board
 from .search import Searcher
 from .utils import index_of_square, san_from_move
 
+
 def play_game():
     playing = True
 
@@ -27,15 +28,14 @@ def play_game():
 
         board.make_move(move)
     else:
-        print("you are black, ill start!")
-
+        print("You are black, ill start!")
 
     while playing:
 
         print("Im thinking...", end="\r")
 
-        #evalu, engine_move = alpha_beta_search(board, 6, color)
-        #evalu, engine_move = simple_min_max(board, 4, color)
+        # evalu, engine_move = alpha_beta_search(board, 6, color)
+        # evalu, engine_move = simple_min_max(board, 4, color)
         s = Searcher(aim_depth=4)
         s.search_alpha_beta(board)
 
@@ -67,8 +67,6 @@ def play_game():
             playing = False
 
         print(board)
-
-
 
 
 if __name__ == "__main__":

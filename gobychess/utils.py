@@ -29,15 +29,15 @@ def set_bit(bitboard, bit):
 
 
 def print_bitboard(board):
-    '''
+    """
     Print a bitboard
-    '''
+    """
     board = '{:064b}'.format(board)
     print('\n'.join([' '.join(wrap(line, 1))[::-1] for line in wrap(board, 8)]))
 
 
 def reverse_bit_scan1(bitboard):
-    '''
+    """
     Give index of most significant bit of xmpz bitboard
 
     Args:
@@ -45,7 +45,7 @@ def reverse_bit_scan1(bitboard):
 
     Returns:
         index of most significant bit (int)
-    '''
+    """
     length = bitboard.bit_length()
     if length == 0:
         return None
@@ -53,7 +53,7 @@ def reverse_bit_scan1(bitboard):
 
 
 def bitboard_of_index(index):
-    '''
+    """
     bitboard from index of square
 
     Args:
@@ -61,12 +61,11 @@ def bitboard_of_index(index):
 
     Returns:
         xmpz: bitboard with bit at idnex set to 1
-    '''
+    """
     return (1 << index)
 
-
 def index_of_square(square):
-    '''
+    """
     Index of square
 
     Args:
@@ -74,7 +73,7 @@ def index_of_square(square):
 
     Returns:
         Int: Index of square in bitboard
-    '''
+    """
     line = ord(square[0].lower()) - ord('a')
     row = int(square[1])
     idx = 8 * (row - 1) + line
@@ -82,7 +81,7 @@ def index_of_square(square):
 
 
 def bitboard_of_square(square):
-    '''
+    """
     Bitboard for square
 
     Args:
@@ -90,13 +89,13 @@ def bitboard_of_square(square):
 
     Returns:
         xmpz: Bitboard with 1 on respective square
-    '''
+    """
     idx = index_of_square(square)
     return 2**idx
 
 
 def bitboard_from_squares(squares):
-    '''
+    """
     Bitboard for a string with multiple squares
 
     Args:
@@ -104,7 +103,7 @@ def bitboard_from_squares(squares):
 
     Returns:
         xmpz: Bitboard with 1 on respective squares
-    '''
+    """
     empty_bitboard = 0
     squares = squares.split()
     for square in squares:
@@ -114,7 +113,7 @@ def bitboard_from_squares(squares):
 
 
 def invert_bitboard(bitboard):
-    '''
+    """
     Invert a bitboard
 
     Args:
@@ -122,12 +121,12 @@ def invert_bitboard(bitboard):
 
     Returns
         xmpz: inverted bitboard, 0 and 1 switched for all bits
-    '''
+    """
     return (1 << 64) - 1 - bitboard
 
 
 def perft(current_board, depth):
-    '''
+    """
     calculates number of moves of all branches for given depth
 
     Args:
@@ -136,7 +135,7 @@ def perft(current_board, depth):
 
     Returns
         int: number of moves
-    '''
+    """
     number_moves = 0
     if not depth:
         return 1
@@ -151,9 +150,11 @@ def promotion_from_char(piece_char):
     piecetype_chars = {'n': 1, 'b': 2, 'r': 3, 'q': 4}
     return piecetype_chars[piece_char]
 
+
 def promotion_from_piecetype(piecetype):
     piecetypes = {1: 'n', 2: 'b', 3: 'r', 4: 'q'}
     return piecetypes[piecetype]
+
 
 def san_from_move(move):
     square_from, square_to, promotion = move
@@ -166,7 +167,6 @@ def san_from_move(move):
     row_to = str(square_to // 8 + 1)
     line_to = chr(ord('a') + (square_to % 8))
 
-
     string += line_from
     string += row_from
     string += line_to
@@ -174,7 +174,6 @@ def san_from_move(move):
 
     if promotion:
         string += promotion_from_piecetype(promotion)
-
 
     return string
 

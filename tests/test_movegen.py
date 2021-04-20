@@ -8,6 +8,7 @@ from gobychess.utils import bitboard_of_square, index_of_square, bitboard_from_s
 
 
 class MovegenTests(unittest.TestCase):
+
     def setUp(self):
         self.board = Board()
         self.board.from_fen("r3k2N/ppp1q1pp/5n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R b q - 2 10")
@@ -49,7 +50,6 @@ class MovegenTests(unittest.TestCase):
         gen_attack_bitboard = mvg.bishop_sliding(square, self.board.all_pieces)
         self.assertEqual(gen_attack_bitboard, attack_bitboard)
 
-
     def test_gen_bishop_moves(self):
         black_moves = len(list(mvg.gen_bishop_moves(self.board.pieces[0][2],
                                                     self.board.all_pieces,
@@ -87,7 +87,6 @@ class MovegenTests(unittest.TestCase):
                                                    self.board.all_pieces,
                                                    self.board.all_pieces_color[1])))
 
-
         self.assertEqual(white_moves, 12)
 
     def test_gen_knight_moves(self):
@@ -99,7 +98,6 @@ class MovegenTests(unittest.TestCase):
         white_moves = len(list(mvg.gen_knight_moves(self.board.pieces[1][1],
                                                     self.board.all_pieces_color[1])))
 
-
         self.assertEqual(white_moves, 3)
 
     def test_gen_king_moves(self):
@@ -109,16 +107,14 @@ class MovegenTests(unittest.TestCase):
         self.assertEqual(black_moves, 4)
 
         white_moves = len(list(mvg.gen_king_moves(self.board.pieces[1][5],
-                                                    self.board.all_pieces_color[1])))
+                                                  self.board.all_pieces_color[1])))
 
         self.assertEqual(white_moves, 4)
-
 
     def test_gen_pawn_moves_white(self):
         white_moves = len(list(mvg.gen_pawn_moves_white(self.board.pieces[1][0]
                                                         , self.board)))
         self.assertEqual(white_moves, 9)
-
 
     def test_gen_pawn_moves_black(self):
         black_moves = len(list(mvg.gen_pawn_moves_black(self.board.pieces[0][0]

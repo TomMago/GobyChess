@@ -6,6 +6,7 @@ import unittest
 from gobychess.board import Board
 from gobychess.evaluation import piece_scores
 
+
 class EvalTest(unittest.TestCase):
     def test_piece_scores(self):
         test_board = Board()
