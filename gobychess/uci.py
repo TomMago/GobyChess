@@ -8,6 +8,8 @@ def main():
 
     board = Board()
 
+    searcher = Searcher(aim_depth=4, manage_time=True)
+
     while True:
         command = input()
 
@@ -53,10 +55,31 @@ def main():
                 board.make_generated_move(move_from_san(move))
 
         elif command.startswith('go'):
-            s = Searcher(aim_depth=4)
-            evaluation = s.search_alpha_beta(board)
+
+            go, *params = command.split()
+
+            parameters = params[::2]
+            values = params[1::2]
+
+            for parameter, value in zip(parameters, values):
+                if parameter == 'wtime':
+                    searcher.wtime = int(value)
+                elif parameter == 'btime':
+                    searcher.btime = int(value)
+                elif parameter == 'winc':
+                    searcher.winc = int(value)
+                elif parameter == 'binc':
+                    searcher.binc = int(value)
+                elif parameter == 'depth':
+                    searcher.aim_depth = int(value)
+                elif parameter == 'movetime':
+                    pass
+
+            searcher.update_depth(board.to_move, board.fullmove_counter)
+
+            evaluation = searcher.search_alpha_beta(board)
             #evaluation, best_move = simple_min_max(board)
-            print(f'bestmove {san_from_move(s.best_move)}')
+            print(f'bestmove {san_from_move(searcher.best_move)}')
 
         else:
             pass

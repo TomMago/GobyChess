@@ -2,7 +2,8 @@
 
 from .utils import (bitboard_of_index, forward_bit_scan, invert_bitboard,
                     print_bitboard, reverse_bit_scan, set_bit, unset_bit,
-                    get_bit)
+                    get_bit, gen_ones)
+
 
 def generate_non_sliding():
     """
@@ -17,7 +18,8 @@ def generate_non_sliding():
                          'pawn black capture': generate_black_pawn_capture(),
                          'pawn white move': generate_white_pawn_move(),
                          'pawn black move': generate_black_pawn_move(),
-                         'knight': generate_knight(), 'king': generate_king()}
+                         'knight': generate_knight(),
+                         'king': generate_king()}
 
     return non_sliding_table
 
@@ -27,7 +29,7 @@ def generate_white_pawn_move():
     Generate all non capturing pawn moves for white for every sqare
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -48,7 +50,7 @@ def generate_white_pawn_capture():
     Generate all capturing pawn moves for white for every sqare
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -67,7 +69,7 @@ def generate_black_pawn_move():
     Generate all non capturing pawn moves for white for every sqare
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -88,7 +90,7 @@ def generate_black_pawn_capture():
     Generate all capturing pawn moves for white for every sqare
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -107,7 +109,7 @@ def generate_king():
     Generate all king moves for every square
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -137,7 +139,7 @@ def generate_knight():
     Generate all knight moves for every square
 
     Returns:
-        moves (xmpz array): array of bitboards of moves for all 64 squares
+        moves (int array): array of bitboards of moves for all 64 squares
     """
     moves = []
     for i in range(64):
@@ -172,9 +174,13 @@ def generate_table():
         move_table (dict): for each direction sliding moves for
                            each square as xmpz bitboard
     """
-    move_table = {'east': generate_direction(1), 'north': generate_direction(8), 'west': generate_direction(-1),
-                  'south': generate_direction(-8), 'south east': generate_direction(-7),
-                  'south west': generate_direction(-9), 'north west': generate_direction(7),
+    move_table = {'east': generate_direction(1),
+                  'north': generate_direction(8),
+                  'west': generate_direction(-1),
+                  'south': generate_direction(-8),
+                  'south east': generate_direction(-7),
+                  'south west': generate_direction(-9),
+                  'north west': generate_direction(7),
                   'north east': generate_direction(9)}
 
     return move_table
@@ -196,7 +202,7 @@ def generate_direction(direction):
         direction (int): Direction to generate see top diagram
 
     Returns:
-        Array: xmpz bitboard of moves for each square (length 64)
+        Array: int bitboard of moves for each square (length 64)
     """
     directions = []
     for i in range(64):
@@ -213,7 +219,7 @@ def generate_direction(direction):
         elif direction == -8:
             def condition(field):
                 return field > 7
-        elif direction == +1 :
+        elif direction == +1:
             def condition(field):
                 return (field + 1) % 8 != 0
         elif direction == -7:
@@ -248,10 +254,10 @@ def rook_sliding(square, blockers):
 
     Args:
         square (int): Index of the square of the rook
-        blockers: Bitboard of all other pieces on the board
+        blockers (int): Bitboard of all other pieces on the board
 
     Returns:
-        xmpz bitboard of attacked squares
+        int: bitboard of attacked squares
     """
     attacks = 0
     attacks |= table['east'][square]
@@ -283,10 +289,10 @@ def bishop_sliding(square, blockers):
 
     Args:
         square (int): Index of the square of the rook
-        blockers: Bitboard of all other pieces on the board
+        blockers (int): Bitboard of all other pieces on the board
 
     Returns:
-        xmpz bitboard of attacked squares
+        int: bitboard of attacked squares
     """
     attacks = 0
     attacks |= table['north east'][square]
@@ -318,12 +324,11 @@ def queen_sliding(square, blockers):
 
     Args:
         square (int): Index of the square of the rook
-        blockers (xmpz): Bitboard of all other pieces on the board
+        blockers (int): Bitboard of all other pieces on the board
 
     Returns:
-        xmpz bitboard of attacked squares
+        int: bitboard of attacked squares
     """
-
     attacks = rook_sliding(square, blockers) | bishop_sliding(square, blockers)
     return attacks
 

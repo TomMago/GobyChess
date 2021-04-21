@@ -12,3 +12,4 @@ s = Searcher(aim_depth=4)
 
 
 cProfile.run('evaluation = s.search_alpha_beta(board)')
+#cProfile.run('evaluation = s.search_bns(board, 0, 10)')

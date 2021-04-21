@@ -1,17 +1,9 @@
-#!/usr/bin/env python3
-
-# python setup.py develop
 from setuptools import setup
-
 
 CLASSIFIERS = '''\
 License :: OSI Approved
 Programming Language :: Python :: 3.7 :: 3.8
 Topic :: Software Development
-Operating System :: Microsoft :: Windows
-Operating System :: POSIX
-Operating System :: Unix
-Operating System :: MacOS
 '''
 
 DISTNAME = 'gobychess'
@@ -27,10 +19,6 @@ ISRELEASED = False
 PYTHON_MIN_VERSION = '3.7'
 PYTHON_REQUIRES = f'>={PYTHON_MIN_VERSION}'
 
-INSTALL_REQUIRES = [
-    'gmpy2'
-]
-
 PACKAGES = [
     'gobychess',
     'tests',
@@ -43,7 +31,6 @@ metadata = dict(
     long_description=README,
     packages=PACKAGES,
     python_requires=PYTHON_REQUIRES,
-    install_requires=INSTALL_REQUIRES,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,

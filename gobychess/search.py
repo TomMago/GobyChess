@@ -15,12 +15,39 @@ class Searcher:
     and maximize it otherwise.
     """
 
-    def __init__(self, aim_depth=0):
+    def __init__(self, aim_depth=0, manage_time=True):
+        self.manage_time = manage_time
         self.best_move = (None, None, None)
         self.evaluation = 0
         self.aim_depth = aim_depth
+        self.wtime = 6000
+        self.btime = 6000
+        self.winc = 0
+        self.binc = 0
+
+    def update_depth(self, to_move, moves_played):
+        """
+        update the aim_depth for fixed depth searches based on times
+        """
+        if self.manage_time:
+            if to_move == 1:
+                time_per_move = self.wtime / 1000 / max(30 - moves_played, 10) + self.winc / 1000
+            elif to_move == 0:
+                time_per_move = self.btime / 1000 / max(30 - moves_played, 10) + self.binc / 1000
+
+            if time_per_move > 15:
+                self.aim_depth = 5
+            elif time_per_move > 2:
+                self.aim_depth = 4
+            elif self.wtime < 2000:
+                self.aim_depth = 2
+            else:
+                self.aim_depth = 3
 
     def search_min_max(self, board):
+        """
+        search min max algorithm for positio
+        """
         if board.to_move == 1:
             evaluation = self.__min_max_max(board, self.aim_depth)
         if board.to_move == 0:
@@ -58,6 +85,9 @@ class Searcher:
         return min_eval
 
     def search_alpha_beta(self, board):
+        """
+        alpha beta search for aim_depth
+        """
         if board.to_move == 1:
             evaluation = self.__alpha_beta_max(board, self.aim_depth, -100000, 100000)
         if board.to_move == 0:
@@ -66,7 +96,7 @@ class Searcher:
 
     def __alpha_beta_max(self, board, depth, alpha, beta):
         moves = board.gen_legal_moves()
-        if depth == 0 or board.is_checkmate() or board.is_stalemate():
+        if depth == 0 or board.is_check_or_stalemate():
             return weighted_piece_scores(board)
         max_eval = alpha
         for move in moves:
@@ -85,7 +115,7 @@ class Searcher:
 
     def __alpha_beta_min(self, board, depth, alpha, beta):
         moves = board.gen_legal_moves()
-        if depth == 0 or board.is_checkmate() or board.is_stalemate():
+        if depth == 0 or board.is_check_or_stalemate():
             return weighted_piece_scores(board)
         min_eval = beta
         for move in moves:
@@ -99,5 +129,65 @@ class Searcher:
                     self.best_move = move
                 if min_eval <= alpha:
                     break
-
         return min_eval
+
+    def bns_alpha_beta(self, board, alpha, beta):
+        if board.to_move == 1:
+            evaluation = self.__alpha_beta_max(board, self.aim_depth, alpha, beta)
+        if board.to_move == 0:
+            evaluation = self.__alpha_beta_min(board, self.aim_depth, alpha, beta)
+        return evaluation
+
+    def nextGuess(self, alpha, beta, subtreeCount):
+        return alpha + (beta - alpha) * (subtreeCount - 1) / subtreeCount
+
+    def search_bns(self, board, alpha, beta):
+        """trying to implement the bns search"""
+        subtreeCount = sum(1 for _ in board.gen_legal_moves())
+
+        test = self.nextGuess(alpha, beta, subtreeCount)
+        betterCount = 0
+        for move in board.gen_legal_moves():
+            new_board = board.board_copy()
+            new_board = new_board.make_generated_move(move)
+
+            bestVal = -self.bns_alpha_beta(board, -test, -(test - 1))
+
+            if bestVal >= test:
+                betterCount = betterCount + 1
+                self.bestNode = move
+
+        if betterCount == subtreeCount:
+            # reduce beta
+            beta = test
+        elif 1 < betterCount < subtreeCount:
+            subtreeCount = betterCount
+            alpha = test
+        elif betterCount == 0:
+            # and alpha-beta range is reduced to 1 ??
+            betterCount == 1
+            pass
+
+
+        while not (beta - alpha) < 2 or betterCount == 1:
+            test = self.nextGuess(alpha, beta, subtreeCount)
+            betterCount = 0
+            for move in board.gen_legal_moves():
+                new_board = board.board_copy()
+                new_board = new_board.make_generated_move(move)
+
+                bestVal = -self.bns_alpha_beta(board, -test, -(test - 1))
+
+                if bestVal >= test:
+                    betterCount = betterCount + 1
+                    self.bestNode = move
+
+                if betterCount == subtreeCount:
+                    # reduce beta
+                    beta = test
+                elif 1 < betterCount < subtreeCount:
+                    subtreeCount = betterCount
+                    alpha = test
+                elif betterCount == 0:
+                    # and alpha-beta range is reduced to 1 ??
+                    break

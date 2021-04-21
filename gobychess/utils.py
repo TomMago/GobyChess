@@ -2,29 +2,46 @@
 
 from textwrap import wrap
 
+def gen_ones(bb):
+    """
+    Generator for getting all the ones in a bitboard
+    """
+    for i in range(0, bb.bit_length()):
+        if bb & (1 << i):
+            yield i
 
 def forward_bit_scan(bitboard):
+    """
+    get least significant bit
+    """
     return reverse_bit_scan(bitboard & -bitboard)
 
 
 def reverse_bit_scan(bitboard):
+    """
+    get most significant bit
+    """
     return bitboard.bit_length() - 1
 
 
 def get_bit(bitboard, bit):
-    return (bitboard & (1 << bit))!=0
+    """
+    get bit of bitboard at position bit
+    """
+    return (bitboard & (1 << bit)) != 0
+
 
 def unset_bit(bitboard, bit):
-    '''
+    """
     sets bit at position bit of bitboard to 1
-    '''
+    """
     return bitboard & ~(1 << bit)
 
 
 def set_bit(bitboard, bit):
-    '''
+    """
     sets bit at position bit of bitboard to 1
-    '''
+    """
     return bitboard | (1 << bit)
 
 
@@ -36,22 +53,6 @@ def print_bitboard(board):
     print('\n'.join([' '.join(wrap(line, 1))[::-1] for line in wrap(board, 8)]))
 
 
-def reverse_bit_scan1(bitboard):
-    """
-    Give index of most significant bit of xmpz bitboard
-
-    Args:
-        bitboard (xmpz): Input  bitboard
-
-    Returns:
-        index of most significant bit (int)
-    """
-    length = bitboard.bit_length()
-    if length == 0:
-        return None
-    return length - 1
-
-
 def bitboard_of_index(index):
     """
     bitboard from index of square
@@ -60,9 +61,10 @@ def bitboard_of_index(index):
         index (ind): Square index 0 - 64
 
     Returns:
-        xmpz: bitboard with bit at idnex set to 1
+        int: bitboard with bit at idnex set to 1
     """
     return (1 << index)
+
 
 def index_of_square(square):
     """
@@ -88,7 +90,7 @@ def bitboard_of_square(square):
         square (String): Square in chess notation e.g. f7
 
     Returns:
-        xmpz: Bitboard with 1 on respective square
+        int: Bitboard with 1 on respective square
     """
     idx = index_of_square(square)
     return 2**idx
@@ -102,7 +104,7 @@ def bitboard_from_squares(squares):
         squares (String): multiple chess squares seperated by whitespace
 
     Returns:
-        xmpz: Bitboard with 1 on respective squares
+        int: Bitboard with 1 on respective squares
     """
     empty_bitboard = 0
     squares = squares.split()
@@ -120,7 +122,7 @@ def invert_bitboard(bitboard):
         bitboard (xmpz): some bitbaord
 
     Returns
-        xmpz: inverted bitboard, 0 and 1 switched for all bits
+        int: inverted bitboard, 0 and 1 switched for all bits
     """
     return (1 << 64) - 1 - bitboard
 
@@ -157,6 +159,9 @@ def promotion_from_piecetype(piecetype):
 
 
 def san_from_move(move):
+    """
+    Get san string from move tuple
+    """
     square_from, square_to, promotion = move
 
     string = ""
@@ -179,6 +184,9 @@ def san_from_move(move):
 
 
 def move_from_san(san):
+    """
+    Get move tuple from san
+    """
     from_square = index_of_square(san[0:2])
     to_square = index_of_square(san[2:4])
 
