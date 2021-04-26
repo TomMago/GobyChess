@@ -26,6 +26,12 @@ dset_data = f_data['features']
 f_meta = h5py.File('data/meta.h5', 'r')
 dset_meta = f_meta['features']
 
+f_val_data = h5py.File('data/test_data.h5', 'r')
+dset_val_data = f_val_data['features']
+
+f_val_eval = h5py.File('data/test_eval.h5', 'r')
+dset_val_eval = f_val_eval['features']
+
 batch_size = 32
 num_batches = dset_data.shape[0] // batch_size
 training_samples = num_batches * batch_size
@@ -79,7 +85,8 @@ for epoch in range(num_epochs):
     epoch_loss_avg = tf.keras.metrics.Mean()
     #epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
 
-    for i in range(num_batches):
+    #for i in range(num_batches):
+    for i in range(1):
 
 
     # Training loop - using batches of 32
@@ -109,16 +116,8 @@ for epoch in range(num_epochs):
         #train_accuracy_results.append(epoch_accuracy.result())
 
     if epoch % 1 == 0:
-        start = model(np.reshape(dset_val[0], (1, 768)))
-        white_plus_10 = model(np.reshape(dset_val[1], (1, 768)))
-        white_plus_2 = model(np.reshape(dset_val[2], (1, 768)))
-        black_plus_4 = model(np.reshape(dset_val[3], (1, 768)))
-        print("Epoch {:03d}: Loss: {:.3f}: Predictions: start: {}, +10: {}, +2: {}, -4: {}".format(epoch, epoch_loss_avg.result(),
-                                                                                                   start, white_plus_10,
-                                                                                                   white_plus_2,
-                                                                                                   black_plus_4))#,
-        #                                                              epoch_accuracy.result()))
-
+        mse = tf.reduce_mean(tf.math.pow(model(np.reshape(dset_val_data, (dset_val_data[:].shape[0], 768))) - dset_val_eval[:], 2))
+        print("Epoch {:03d}: Loss: {:.3f}: mse: {}".format(epoch, epoch_loss_avg.result(), mse))
 
 
 

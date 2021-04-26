@@ -102,6 +102,7 @@ def weighted_piece_scores(board):
         return (-1) ** board.to_move * MATE_SCORE
 
     score = 0
+
     for piece in range(6):
         # white
         bitboard = board.pieces[1][piece]
