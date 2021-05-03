@@ -46,7 +46,7 @@ class Searcher:
 
     def search_min_max(self, board):
         """
-        search min max algorithm for positio
+        search simple min max algorithm for position
         """
         if board.to_move == 1:
             evaluation = self.__min_max_max(board, self.aim_depth)
@@ -129,9 +129,13 @@ class Searcher:
                     self.best_move = move
                 if min_eval <= alpha:
                     break
+
         return min_eval
 
     def bns_alpha_beta(self, board, alpha, beta):
+        '''
+        Trying to implement bns search
+        '''
         if board.to_move == 1:
             evaluation = self.__alpha_beta_max(board, self.aim_depth, alpha, beta)
         if board.to_move == 0:
@@ -139,10 +143,12 @@ class Searcher:
         return evaluation
 
     def nextGuess(self, alpha, beta, subtreeCount):
+        '''
+        update test value
+        '''
         return alpha + (beta - alpha) * (subtreeCount - 1) / subtreeCount
 
     def search_bns(self, board, alpha, beta):
-        """trying to implement the bns search"""
         subtreeCount = sum(1 for _ in board.gen_legal_moves())
 
         test = self.nextGuess(alpha, beta, subtreeCount)

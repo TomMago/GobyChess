@@ -78,7 +78,6 @@ def main():
             searcher.update_depth(board.to_move, board.fullmove_counter)
 
             evaluation = searcher.search_alpha_beta(board)
-            #evaluation, best_move = simple_min_max(board)
             print(f'bestmove {san_from_move(searcher.best_move)}')
 
         else:

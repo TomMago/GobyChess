@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import os
-from random import randrange
 import random
+from random import randrange
 
 import chess
 import chess.pgn
+import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -59,17 +60,6 @@ class Loader():
         num_rook_w = sum(board.pieces(chess.ROOK, chess.WHITE).tolist())
         num_queen_w = sum(board.pieces(chess.QUEEN, chess.WHITE).tolist())
 
-        #features = [num_pawns_b,
-        #            num_knights_b,
-        #            num_bishop_b,
-        #            num_rook_b,
-        #            num_queen_b,
-        #            num_pawns_w,
-        #            num_knights_w,
-        #            num_bishop_w,
-        #            num_rook_w,
-        #            num_queen_w]
-
         features = [board.pieces(chess.PAWN, chess.WHITE).tolist(),
                     board.pieces(chess.KNIGHT, chess.WHITE).tolist(),
                     board.pieces(chess.BISHOP, chess.WHITE).tolist(),
@@ -104,7 +94,6 @@ class Loader():
         return game_features
 
     def load_games(self):
-
         counter = 0
         print(f"loading {self.num_games} games")
         while self.pgn and counter < self.num_games:
@@ -122,6 +111,10 @@ class Loader():
         self.y_train *= 2
 
     def build_triplett(self, node):
+        '''
+        Build features of three positions:
+        current position, next position, and position that occurs after a random move
+        '''
         position = node.board()
 
         rnd_move = random.choice(list(node.board().legal_moves))
@@ -137,6 +130,10 @@ class Loader():
         return triplett
 
     def build_meta(self, node):
+        '''
+        Build metadata for a game:
+        check if next node is last node, save result of game and who is currently to move
+        '''
         result = self.label_from_game(node.game())
         last = False
         if node.next().is_end():
@@ -161,6 +158,9 @@ class Loader():
             yield 2 * int(self.label_from_game(game)), self.features_from_game(game)
 
     def load_game(self, game):
+        '''
+        Build data for one single game
+        '''
         data = []
         meta = []
 
@@ -172,12 +172,14 @@ class Loader():
         return data, meta
 
     def generate_triplett_dataset(self, skip=0):
+        '''
+        Generate dataset from pgn file
+        '''
         dataset = []
         metaset = []
         counter = 0
         print(f"loading {self.num_games} games")
 
-        # REVIEW: Brauche ich nicht ?
         for i in range(skip):
             game = chess.pgn.read_game(self.pgn)
 
@@ -192,18 +194,9 @@ class Loader():
 
         return dataset, metaset
 
-
-
-
     def build_dataset(self):
         self.dataset = tf.data.Dataset.from_generator(self.generate_dataset, output_types=(tf.int32, tf.int32))
 
-
-
-
-
-import numpy as np
-import h5py
 
 class HDF5Store(object):
     """
