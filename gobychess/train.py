@@ -42,7 +42,6 @@ def loss(pmodel, pposition, pnext_position, prandom_position, last, result, to_m
     y_position = pmodel(pposition, training=training)
     y_next_position = pmodel(pnext_position, training=training)
     y_random_position = pmodel(prandom_position, training=training)
-
     last = tf.cast(last, dtype=bool)
 
     y_next_position = tf.where(tf.reshape(last, [32,1]),
@@ -76,7 +75,7 @@ for epoch in range(num_epochs):
     epoch_loss_avg = tf.keras.metrics.Mean()
 
     for i in range(num_batches):
-    # Training loop - using batches of 32
+
         print(f"Batch: {i}", end="\r")
         position = np.reshape(dset_data[i:i+batch_size, 0, :, :], (batch_size, 768))
         next_position = np.reshape(dset_data[i:i+batch_size, 1, :, :], (batch_size, 768))
@@ -87,7 +86,7 @@ for epoch in range(num_epochs):
 
         loss_value, grads = grad(model, position, next_position, random_position, last, result, to_move)
 
-        # Track progress
+
         epoch_loss_avg.update_state(loss_value)  # Add current batch loss
 
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -96,7 +95,6 @@ for epoch in range(num_epochs):
 
     # End epoch
     train_loss_results.append(epoch_loss_avg.result())
-        #train_accuracy_results.append(epoch_accuracy.result())
 
     if epoch % 1 == 0:
         test_pos_0 = model(np.reshape(dset_val_data[1], (1, 768)))
@@ -105,6 +103,5 @@ for epoch in range(num_epochs):
         mse = tf.reduce_mean(tf.math.pow(model(np.reshape(dset_val_data, (dset_val_data[:].shape[0], 768))) - dset_val_eval[:], 2))
         print("Epoch {:03d}: Loss: {:.3f}: mse: {}, Test Pos. 0: {}, Test Pos. -1: {}, Test Pos. +1: {}".format(epoch, epoch_loss_avg.result(), mse,
                                                                                                                 test_pos_0, test_pos_1, test_pos_2))
-
 
 

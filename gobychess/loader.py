@@ -94,7 +94,6 @@ class Loader():
         return game_features
 
     def load_games(self):
-
         counter = 0
         print(f"loading {self.num_games} games")
         while self.pgn and counter < self.num_games:
@@ -112,6 +111,10 @@ class Loader():
         self.y_train *= 2
 
     def build_triplett(self, node):
+        '''
+        Build features of three positions:
+        current position, next position, and position that occurs after a random move
+        '''
         position = node.board()
 
         rnd_move = random.choice(list(node.board().legal_moves))
@@ -127,6 +130,10 @@ class Loader():
         return triplett
 
     def build_meta(self, node):
+        '''
+        Build metadata for a game:
+        check if next node is last node, save result of game and who is currently to move
+        '''
         result = self.label_from_game(node.game())
         last = False
         if node.next().is_end():
@@ -151,6 +158,9 @@ class Loader():
             yield 2 * int(self.label_from_game(game)), self.features_from_game(game)
 
     def load_game(self, game):
+        '''
+        Build data for one single game
+        '''
         data = []
         meta = []
 
@@ -162,12 +172,14 @@ class Loader():
         return data, meta
 
     def generate_triplett_dataset(self, skip=0):
+        '''
+        Generate dataset from pgn file
+        '''
         dataset = []
         metaset = []
         counter = 0
         print(f"loading {self.num_games} games")
 
-        # REVIEW: Brauche ich nicht ?
         for i in range(skip):
             game = chess.pgn.read_game(self.pgn)
 

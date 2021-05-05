@@ -527,8 +527,6 @@ def gen_king_moves(king_bitboard, own_pieces):
         moveset = attack_bitboard & invert_bitboard(own_pieces)
         yield from yield_moveset(king_square, moveset)
 
-
-
 def generate_moves(board):
     """
     Generates all pseudo legal moves for the color to move
@@ -841,6 +839,7 @@ def check_piece_move(move, board):
     if move in board.gen_legal_moves():
         return True
     return False
+
 
 def color_in_check(board):
     """
