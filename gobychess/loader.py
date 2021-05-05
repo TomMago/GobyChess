@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import os
-from random import randrange
 import random
+from random import randrange
 
 import chess
 import chess.pgn
+import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -58,17 +59,6 @@ class Loader():
         num_bishop_w = sum(board.pieces(chess.BISHOP, chess.WHITE).tolist())
         num_rook_w = sum(board.pieces(chess.ROOK, chess.WHITE).tolist())
         num_queen_w = sum(board.pieces(chess.QUEEN, chess.WHITE).tolist())
-
-        #features = [num_pawns_b,
-        #            num_knights_b,
-        #            num_bishop_b,
-        #            num_rook_b,
-        #            num_queen_b,
-        #            num_pawns_w,
-        #            num_knights_w,
-        #            num_bishop_w,
-        #            num_rook_w,
-        #            num_queen_w]
 
         features = [board.pieces(chess.PAWN, chess.WHITE).tolist(),
                     board.pieces(chess.KNIGHT, chess.WHITE).tolist(),
@@ -192,18 +182,9 @@ class Loader():
 
         return dataset, metaset
 
-
-
-
     def build_dataset(self):
         self.dataset = tf.data.Dataset.from_generator(self.generate_dataset, output_types=(tf.int32, tf.int32))
 
-
-
-
-
-import numpy as np
-import h5py
 
 class HDF5Store(object):
     """

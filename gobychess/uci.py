@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
+"""
+Basic uci implementation
+"""
+
 from .board import Board
 from .utils import move_from_san, san_from_move
 from .search import Searcher
+from .evaluation import Evaluator
+import time
 
 def main():
 
     board = Board()
 
-    searcher = Searcher(aim_depth=4, manage_time=True)
+    evaluator = Evaluator()
+    searcher = Searcher(evaluator, aim_depth=4, manage_time=True)
+
 
     while True:
         command = input()
@@ -19,6 +27,7 @@ def main():
         elif command == 'uci':
             print("id name GobyChess")
             print("id author Tom Magorsch")
+            print("option name evalpath type string")
             print("uciok")
 
         elif command == 'isready':
@@ -56,7 +65,7 @@ def main():
 
         elif command.startswith('go'):
 
-            go, *params = command.split()
+            _, *params = command.split()
 
             parameters = params[::2]
             values = params[1::2]
@@ -72,14 +81,20 @@ def main():
                     searcher.binc = int(value)
                 elif parameter == 'depth':
                     searcher.aim_depth = int(value)
+                    searcher.manage_time = False
                 elif parameter == 'movetime':
                     pass
 
             searcher.update_depth(board.to_move, board.fullmove_counter)
 
-            evaluation = searcher.search_alpha_beta(board)
-            #evaluation, best_move = simple_min_max(board)
+            evaluation = searcher.search_negascout(board)
+            #evaluation = searcher.search_alpha_beta(board)
             print(f'bestmove {san_from_move(searcher.best_move)}')
+
+        elif command.startswith('setoption'):
+            _, *params = command.split()
+            if params[1] == 'evalpath':
+                evaluator.load_tables(params[3] + "_square.csv", params[3] + "_piece.csv")
 
         else:
             pass

@@ -149,11 +149,17 @@ def perft(current_board, depth):
 
 
 def promotion_from_char(piece_char):
+    """
+    get numeric piece type from char
+    """
     piecetype_chars = {'n': 1, 'b': 2, 'r': 3, 'q': 4}
     return piecetype_chars[piece_char]
 
 
 def promotion_from_piecetype(piecetype):
+    """
+    get piece type char from numeric piecetype
+    """
     piecetypes = {1: 'n', 2: 'b', 3: 'r', 4: 'q'}
     return piecetypes[piecetype]
 

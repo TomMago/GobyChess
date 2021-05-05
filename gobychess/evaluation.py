@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 
+import csv
 import itertools
 
 from .board import Board
-from .utils import forward_bit_scan, reverse_bit_scan, unset_bit, gen_ones
+from .utils import (forward_bit_scan, gen_ones, get_bit, reverse_bit_scan,
+                    unset_bit)
 
-MATE_SCORE = 10000
 
-square_score_table = [
+class Evaluator:
+
+    MATE_SCORE = 50000
+
+    piece_score = [82, 337, 365, 477, 1025,  0]
+
+    square_score_table = [
     # pawn
     (0,   0,   0,   0,   0,   0,  0,   0,
      -35,  -1, -20, -23, -15,  24, 38, -22,
@@ -63,59 +70,103 @@ square_score_table = [
      29,  -1, -20,  -7,  -8,  -4, -38, -29,
      -65,  23,  16, -15, -56, -34,   2,  13)]
 
-
-def piece_scores(board):
-    """
-    Calculate board score with only piece values
-
-    Args:
-        board (Board): board with position to evaluate
-
-    Returns:
-        float: score of current position
-    """
-    piece_score = [1, 3, 3, 5, 9, 0]
-
-    if board.is_checkmate():
-        return (-1) ** board.to_move * MATE_SCORE
-
-    score = 0
-    for color, piece in itertools.product(range(2), range(6)):
-        score += (-1)**color * bin(board.pieces[1 - color][piece]).count("1") * piece_score[piece]
-
-    return score
+    def load_tables(self, square_score_path, piece_score_path):
+        '''
+        piece square table and piece scores can be load from csv files
+        '''
+        with open(square_score_path, newline='') as csvfile:
+            self.square_score_table = ([list(map(int, i)) for i in csv.reader(csvfile)])
+        with open(piece_score_path, newline='') as csvfile:
+            self.piece_score = ([map(int, i) for i in csv.reader(csvfile)])
+        print(self.square_score_table)
+        print(self.piece_score)
 
 
-def weighted_piece_scores(board):
-    """
-    Calculate board score with only piece values
+    def piece_scores(self, board):
+        """
+        Calculate board score with only piece values
 
-    Args:
-        board (Board): board with position to evaluate
+        Args:
+            board (Board): board with position to evaluate
 
-    Returns:
-        float: score of current position
-    """
-    piece_score = [82, 337, 365, 477, 1025,  0]
+        Returns:
+            float: score of current position
+        """
+        piece_score_sim = [1, 3, 3, 5, 9, 0]
 
-    if board.is_checkmate():
-        return (-1) ** board.to_move * MATE_SCORE
+        if board.is_checkmate():
+            return (-1) ** board.to_move * self.MATE_SCORE
 
-    score = 0
+        score = 0
+        for color, piece in itertools.product(range(2), range(6)):
+            score += (-1)**color * bin(board.pieces[1 - color][piece]).count("1") * piece_score_sim[piece]
 
-    for piece in range(6):
-        # white
-        bitboard = board.pieces[1][piece]
-        while bitboard:
-            square = forward_bit_scan(bitboard)
-            score += piece_score[piece] + square_score_table[piece][square]
-            bitboard = unset_bit(bitboard, square)
+        return score
 
-        # black
-        bitboard = board.pieces[0][piece]
-        while bitboard:
-            square = forward_bit_scan(bitboard)
-            score -= piece_score[piece] + square_score_table[piece][square ^ 56]
-            bitboard = unset_bit(bitboard, square)
 
-    return score
+    def weighted_piece_scores(self, board):
+        """
+        Calculate board score with only piece values
+
+        Args:
+            board (Board): board with position to evaluate
+
+
+        Returns:
+            float: score of current position
+        """
+
+        # factor to favor faster mate
+        if board.is_checkmate():
+            return (-1) ** board.to_move * self.MATE_SCORE * (1 / (1 + board.fullmove_counter / 20) + 1)
+
+        score = 0
+
+        for piece in range(6):
+            # white
+            bitboard = board.pieces[1][piece]
+            while bitboard:
+                square = reverse_bit_scan(bitboard)
+                score += self.piece_score[piece] + self.square_score_table[piece][square]
+                bitboard = unset_bit(bitboard, square)
+
+            # black
+            bitboard = board.pieces[0][piece]
+            while bitboard:
+                square = reverse_bit_scan(bitboard)
+                score -= self.piece_score[piece] + self.square_score_table[piece][square ^ 56]
+                bitboard = unset_bit(bitboard, square)
+
+        return score
+
+
+    def eval_move(self, board, move):
+        '''
+        Evaluate board after move.
+        Only relative evaluation to other moves.
+        '''
+        from_square, to_square, promotion = move
+        if board.to_move:
+            eval_from = from_square
+            eval_to = to_square
+        else:
+            eval_from = from_square ^ 56
+            eval_to = to_square ^ 56
+        move_piece = board.piece_on(from_square)
+        score = self.square_score_table[move_piece][eval_to] - self.square_score_table[move_piece][eval_to]
+        if get_bit(board.all_pieces_color[1 - board.to_move], to_square):
+            cap_piece = board.piece_opponent_on(to_square)
+            score -= self.piece_score[cap_piece] + self.square_score_table[cap_piece][eval_to]
+        if move_piece == 0:
+            if not promotion is None:
+                score += self.piece_score[promotion] + self.square_score_table[promotion][eval_to]
+                score -= self.piece_score[0] + self.square_score_table[0][eval_to]
+            if to_square == board.en_passant:
+                score -= self.piece_score[0] + self.square_score_table[0][to_square + (-1) ** board.to_move * 8]
+        if move_piece == 5 and abs(from_square - to_square) == 2:
+            if from_square < to_square:
+                score += self.square_score_table[3][eval_from + 1] - self.square_score_table[3][eval_from + 3]
+            elif from_square > to_square:
+                score += self.square_score_table[3][eval_from - 1] - self.square_score_table[3][eval_from - 4]
+
+        return score

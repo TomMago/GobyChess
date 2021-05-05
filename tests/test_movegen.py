@@ -151,3 +151,15 @@ class MovegenTests(unittest.TestCase):
         self.board.to_move = 1
         self.assertEqual(len(list(mvg.generate_moves(self.board))), 34)
         self.board.to_move = 0
+
+    def test_generate_quiet_moves(self):
+        self.assertEqual(len(list(self.board.gen_quiet_moves())), 0)
+        test_board = Board()
+        test_board.from_fen("r3k2N/pp2q1pp/2p2n2/3Pp3/Q1Bn2b1/2P5/PP1P1bPP/RNB2K1R w q - 0 11")
+        self.assertEqual(len(list(test_board.gen_quiet_moves())), 5)
+        test_board.from_fen("r1bqk2r/ppp1b1pp/2n2p2/3pP3/2BPn3/2N2Q2/PPP2PPP/R1B2RK1 w kq d6 0 10")
+        self.assertEqual(len(list(test_board.gen_quiet_moves())), 7)
+        test_board.from_fen("r1bqkb1r/pppp1Bpp/2n2n2/4p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 4")
+        self.assertEqual(len(list(test_board.gen_quiet_moves())), 1)
+        test_board.from_fen("rnbq2nr/ppp1kPpp/8/8/1b6/8/PPPP1PPP/RNBQKBNR w KQ - 1 5")
+        self.assertEqual(len(list(test_board.gen_quiet_moves())), 4)

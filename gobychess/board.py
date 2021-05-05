@@ -6,8 +6,8 @@ import copy
 import itertools
 
 from . import movegen as mvg
-
-from .utils import bitboard_of_index, bitboard_of_square, print_bitboard, set_bit, unset_bit, get_bit
+from .utils import (bitboard_of_index, bitboard_of_square, get_bit,
+                    print_bitboard, set_bit, unset_bit)
 
 
 class Board:
@@ -266,16 +266,8 @@ class Board:
 
         # if move is promotion set new piece and remove pawn
         if promotion:
-            # REVIEW rather without update of square_to
             self.update_piece(self.to_move, promotion, square_from, square_to)
             self.pieces[self.to_move][0] = unset_bit(self.pieces[self.to_move][0], square_to)
-
-        # if self.all_pieces_color[1 - self.to_move][square_to]:
-        #     self.halfmove_clock = 0
-        # elif piece_to_move == 0:
-        #     self.halfmove_clock = 0
-        # else:
-        #     self.halfmove_clock += 1
 
         if not self.to_move:
             self.fullmove_counter += 1
@@ -293,6 +285,16 @@ class Board:
         """
         return itertools.filterfalse(self.in_check_after_move,
                                      mvg.generate_moves(self))
+
+    def gen_quiet_moves(self):
+        """
+        Generates only capturing moves
+
+        Returns:
+            iterable of the legal moves
+        """
+        return itertools.filterfalse(self.in_check_after_move,
+                                     mvg.generate_quiet_moves(self))
 
     def update_all_pieces(self):
         """
@@ -319,6 +321,21 @@ class Board:
             piece (int): type of the piece on the square
         """
         iterator = (p for p in range(6) if get_bit(self.pieces[self.to_move][p],
+                                                   square))
+        piece = next(iterator, None)
+        return piece
+
+    def piece_opponent_on(self, square):
+        """
+        Check what piece is on certain square
+
+        Args:
+            square (int): square to check for pieces
+
+        Returns:
+            piece (int): type of the piece on the square
+        """
+        iterator = (p for p in range(6) if get_bit(self.pieces[1 - self.to_move][p],
                                                    square))
         piece = next(iterator, None)
         return piece
