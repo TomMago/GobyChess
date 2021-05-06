@@ -77,10 +77,7 @@ class Evaluator:
         with open(square_score_path, newline='') as csvfile:
             self.square_score_table = ([list(map(int, i)) for i in csv.reader(csvfile)])
         with open(piece_score_path, newline='') as csvfile:
-            self.piece_score = ([map(int, i) for i in csv.reader(csvfile)])
-        print(self.square_score_table)
-        print(self.piece_score)
-
+            self.piece_score = ([list(map(int, i))[0] for i in csv.reader(csvfile)])
 
     def piece_scores(self, board):
         """

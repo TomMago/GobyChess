@@ -81,7 +81,7 @@ class Searcher:
         return self.__negascout(board, self.aim_depth, -10000000, 10000000)
 
     def __negascout(self, board, depth, alpha, beta):
-        if depth == 0:
+        if depth == 0 or board.is_check_or_stalemate():
             return self.quiescence(board, alpha, beta)
             #return (-1)**(1 - board.to_move) * self.evaluator.weighted_piece_scores(board)
         b = beta
