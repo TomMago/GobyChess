@@ -15,8 +15,7 @@ def main():
     board = Board()
 
     evaluator = Evaluator()
-    searcher = Searcher(evaluator, aim_depth=4, manage_time=True)
-
+    searcher = Searcher(evaluator, aim_depth=5, manage_time=True)
 
     while True:
         command = input()
@@ -94,11 +93,9 @@ def main():
         elif command.startswith('setoption'):
             _, *params = command.split()
             if params[1] == 'evalpath':
-                evaluator.load_tables(params[3] + "_square.csv", params[3] + "_piece.csv")
-
+                searcher.evaluator.load_tables(params[3] + "_square.csv", params[3] + "_piece.csv")
         else:
             pass
-
 
 if __name__ == "__main__":
     main()

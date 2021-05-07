@@ -13,9 +13,9 @@ import tensorflow as tf
 from tensorflow.math import log, pow, sigmoid
 
 model = tf.keras.Sequential([
-  tf.keras.layers.Dense(100, activation=tf.nn.relu, input_shape=(768,)),  # input shape required
-  tf.keras.layers.Dropout(0.1),
-  tf.keras.layers.Dense(50, activation=tf.nn.relu),
+  tf.keras.layers.Dense(50, activation=tf.nn.relu, input_shape=(768,)),  # input shape required
+#  tf.keras.layers.Dropout(0.1),
+  tf.keras.layers.Dense(10, activation=tf.nn.relu),
   tf.keras.layers.Dense(1, activation=tf.keras.activations.tanh)
 ])
 
@@ -35,10 +35,10 @@ dset_val_eval = f_val_eval['features']
 
 
 alpha = 1
-td_lambda = 0.3
+td_lambda = 0.5
 num_epochs = 30
 batch_size = 32
-dset_size = 250000
+dset_size = 100000
 
 def predict(pmodel, position, training):
     y_position = pmodel(position, training=training)
@@ -50,7 +50,7 @@ def grad(pmodel, position):
         pred = predict(pmodel, position, training=True)
     return tape.gradient(pred, pmodel.trainable_variables)
 
-optimizer = tf.keras.optimizers.SGD(learning_rate=0.00001)
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.000001)
 
 fval = h5py.File('data/test.h5', 'r')
 dset_val = fval['features']
@@ -82,6 +82,7 @@ for epoch in range(num_epochs):
         # deltaw = [deltaw[i] + alpha * (V_next_position - V_position) * grads[i] for i in range(len(gradients))]
 
         delta = [alpha * (V_next_position - V_position) * grads[i] for i in range(len(gradients))]
+        delta = [(-1) * delta[i] for i in range(len(gradients))]
 
         optimizer.apply_gradients(zip(delta, model.trainable_variables))
 
@@ -95,6 +96,12 @@ for epoch in range(num_epochs):
             deltaw = [0, 0, 0, 0, 0, 0]
             games += 1
             print(f"Trained {games} games, avg: {avg}", end="\r")
+            #if games % 300 == 0:
+                #test_pos_0 = model(np.reshape(dset_val_data[1], (1, 768)))
+                #test_pos_1 = model(np.reshape(dset_val_data[8], (1, 768)))
+                #test_pos_2 = model(np.reshape(dset_val_data[10], (1, 768)))
+                #mse = tf.reduce_mean(tf.math.pow(model(np.reshape(dset_val_data, (dset_val_data[:].shape[0], 768))) - dset_val_eval[:], 2))
+                #print("Epoch {:03d} -- game {}: mse: {}, Test Pos. 0: {}, Test Pos. -1: {}, Test Pos. +1: {}".format(epoch, games, mse, test_pos_0, test_pos_1, test_pos_2))
 
     if epoch % 1 == 0:
         test_pos_0 = model(np.reshape(dset_val_data[1], (1, 768)))
