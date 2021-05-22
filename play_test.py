@@ -4,12 +4,9 @@
 Script for optimization of engine parameters with genetic methods.
 Let different versions of Goby play tournament against each other
 and create offsprings of best ones by random variation
-TODO:
-Debug playing single tournament
-automate tournament playing
-take top x percent of tournament to create offsprings
 """
 
+import logging
 import os
 import time
 
@@ -17,16 +14,15 @@ import chess
 import chess.engine
 import chess.pgn
 import numpy as np
-import logging
 
 # Enable debug logging.
 # logging.basicConfig(level=logging.DEBUG)
 
-DEPTH = 3
+DEPTH = 2
 BESTCOUNT = 4
-CHILDREN = 50
+CHILDREN = 30
 EPOCHS = 5
-VARIATION = 5
+VARIATION = 6
 
 class Tournament:
 
@@ -44,14 +40,12 @@ class Tournament:
         engine1 = chess.engine.SimpleEngine.popen_uci(self.engine_path)
         engine2 = chess.engine.SimpleEngine.popen_uci(self.engine_path)
         engine1.configure({'evalpath': f'settings/epoch-{self.epoch}/gbch-{self.epoch}-{player1}'})
-        time.sleep(0.1)
         engine2.configure({'evalpath': f'settings/epoch-{self.epoch}/gbch-{self.epoch}-{player2}'})
-        time.sleep(0.1)
         game = chess.pgn.Game()
         game.headers["Event"] = "gobyfight"
         game.headers["White"] = f"gbch-{self.epoch}-{player1}"
         game.headers["Black"] = f"gbch-{self.epoch}-{player2}"
-        print("Starting game", end="\r")
+        #print("Starting game", end="\r")
         board = chess.Board()
         node = game.game()
         while not board.is_game_over():
@@ -64,7 +58,7 @@ class Tournament:
             board.push(result.move)
             node = node.add_variation(chess.Move.from_uci(result.move.uci()))
         outcome = board.outcome(claim_draw=True).winner
-        print("Finished game", end="\r")
+        #print("Finished game", end="\r")
         if outcome:
             self.players[player1] += 1
             print(f"{player1} won agains {player2}", end="\r")
@@ -76,7 +70,7 @@ class Tournament:
             self.players[player2] += 0.5
             print(f"{player1} vs {player2} ended in a draw", end="\r")
         game.headers["Result"] = board.outcome().result()
-        print(game, file=open(os.path.abspath("gmaes.pgn"), "a+"), end="\n\n")
+        print(game, file=open(os.path.abspath("games.pgn"), "a+"), end="\n\n")
         engine1.quit()
         engine2.quit()
 

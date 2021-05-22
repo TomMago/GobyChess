@@ -4,18 +4,24 @@
 Basic uci implementation
 """
 
-from .board import Board
-from .utils import move_from_san, san_from_move
-from .search import Searcher
-from .evaluation import Evaluator
+import sys
 import time
 
+from .board import Board
+from .evaluation import Evaluator
+from .search import Searcher
+from .ttable import ttable
+from .utils import move_from_san, san_from_move
+
+
 def main():
+
+    sys.setrecursionlimit(10**6)
 
     board = Board()
 
     evaluator = Evaluator()
-    searcher = Searcher(evaluator, aim_depth=5, manage_time=True)
+    searcher = Searcher(evaluator, aim_depth=4, manage_time=True)
 
     while True:
         command = input()
@@ -59,8 +65,10 @@ def main():
             else:
                 moves = []
 
+            searcher.past_positions = set()
             for move in moves:
                 board.make_generated_move(move_from_san(move))
+                searcher.past_positions.add(tuple(board.pieces[0]+board.pieces[1]+[board.to_move]))
 
         elif command.startswith('go'):
 
@@ -86,9 +94,20 @@ def main():
 
             searcher.update_depth(board.to_move, board.fullmove_counter)
 
+            start = time.time()
             evaluation = searcher.search_negascout(board)
-            #evaluation = searcher.search_alpha_beta(board)
+            end = time.time()
+            print("scout ", end - start)
+
             print(f'bestmove {san_from_move(searcher.best_move)}')
+
+            #start = time.time()
+            #evaluation = searcher.search_iter(board)
+            #end = time.time()
+            #print("info calctime ", end - start)
+
+            #print(f'bestmove {san_from_move(searcher.best_move)}')
+
 
         elif command.startswith('setoption'):
             _, *params = command.split()

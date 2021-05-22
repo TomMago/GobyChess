@@ -114,7 +114,6 @@ class Evaluator:
         Returns:
             float: score of current position
         """
-
         # factor to favor faster mate
         if board.is_checkmate():
             return (-1) ** board.to_move * self.MATE_SCORE * (1 / (1 + board.fullmove_counter / 20) + 1)

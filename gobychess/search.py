@@ -2,7 +2,8 @@
 
 from .evaluation import Evaluator
 from .utils import move_from_san, san_from_move
-
+from .ttable import ttable, board_entry
+import time
 
 class Searcher:
     """
@@ -21,6 +22,7 @@ class Searcher:
         self.manage_time = manage_time
         self.best_move = (None, None, None)
         self.evaluation = 0
+        self.past_positions = set()
         self.aim_depth = aim_depth
         self.wtime = 60000
         self.btime = 60000
@@ -74,19 +76,145 @@ class Searcher:
 
         return alpha
 
+
+    def search_iter(self, board):
+        MAXDEPTH = 40
+        depth = 1
+        start_time = time.time()
+        round_time = time.time()
+        if board.to_move == 1:
+            movetime = self.wtime / 1000 / max(30 - board.fullmove_counter, 10) + self.winc / 1000
+        elif board.to_move == 0:
+            movetime = self.btime / 1000 / max(30 - board.fullmove_counter, 10) + self.binc / 1000
+
+        while depth <= MAXDEPTH and round_time - start_time < movetime / 2:
+            self.aim_depth = depth
+            self.s__negascout_tt(board, depth, -100000000, 100000000)
+            print(f"info depth {depth}")
+            depth += 1
+            round_time = time.time()
+
+    def search_negascout_tt(self, board):
+        self.s__negascout_tt(board, self.aim_depth, -100000000, 100000000, first=False)
+
+    def s__negascout_tt(self, board, depth, alpha, beta, first=True):
+
+        storage = 1
+
+        if not first and tuple(board.pieces[0]+board.pieces[1]+[board.to_move]) in self.past_positions:
+            return 0
+
+        tt_lookup = ttable.get(tuple(board.pieces[0]+board.pieces[1]+[board.to_move]))
+        if tt_lookup and tt_lookup[2] >= depth:
+            if tt_lookup[1] == 0:
+                return tt_lookup[0]
+            elif tt_lookup[1] == 1:
+                alpha = max(alpha, tt_lookup[0])
+            elif tt_lookup[1] == 2:
+                beta = min(beta, tt_lookup[0])
+
+            if alpha >= beta:
+                return tt_lookup[0]
+
+        if depth == 0 or board.is_check_or_stalemate():
+            return self.quiescence(board, alpha, beta)
+
+        for move in sorted(board.gen_legal_moves(), key=lambda move: self.evaluator.eval_move(board, move)):
+
+            new_board = board.board_copy()
+            new_board = new_board.make_generated_move(move)
+
+            current_eval = -self.__negascout(new_board, depth - 1, -alpha - 1, -alpha, False)
+            if current_eval > alpha and current_eval < beta:
+                current_eval = -self.__negascout(new_board, depth - 1, -beta, -current_eval, False)
+
+            if current_eval >= beta:
+                ttable[tuple(board.pieces[0]+board.pieces[1]+[board.to_move])] = (beta, 2, depth)
+                return current_eval
+
+
+            if current_eval > alpha:
+                alpha = current_eval
+                storage = 0
+                if depth == self.aim_depth:
+                    self.best_move = move
+
+            #if alpha >= beta:
+            #    break
+
+        ttable[tuple(board.pieces[0]+board.pieces[1]+[board.to_move])] = (alpha, storage, depth)
+
+        return alpha
+
+    def search_negamax_tt(self, board):
+        self.__negamax_tt(board, self.aim_depth, -100000000, 100000000)
+
+    def __negamax_tt(self, board, depth, alpha, beta, first=True):
+
+        if not first and tuple(board.pieces[0]+board.pieces[1]+[board.to_move]) in self.past_positions:
+            return 0
+
+        a = alpha
+        tt_lookup = ttable.get(tuple(board.pieces[0]+board.pieces[1]+[board.to_move]))
+        if tt_lookup and tt_lookup[2] >= depth:
+            if tt_lookup[1] == 0:
+                return tt_lookup[0]
+            elif tt_lookup[1] == 1:
+                alpha = max(alpha, tt_lookup[0])
+            elif tt_lookup[1] == 2:
+                beta = min(beta, tt_lookup[0])
+
+            if alpha >= beta:
+                return tt_lookup[0]
+
+
+        if depth ==0 or board.is_check_or_stalemate():
+            return self.quiescence(board, alpha, beta)
+
+        val = -100000000
+
+        for move in sorted(board.gen_legal_moves(), key=lambda move: self.evaluator.eval_move(board, move)):
+
+            new_board = board.board_copy()
+            new_board = new_board.make_generated_move(move)
+            val = max(val, -self.__negamax_tt(new_board, depth - 1, -beta, -alpha, first=False))
+
+            if val > alpha:
+                alpha = val
+                if depth == self.aim_depth:
+                    self.best_move = move
+
+            if alpha >= beta:
+                break
+
+        if val <= a:
+            ttable[tuple(board.pieces[0]+board.pieces[1]+[board.to_move])] = (val, 2, depth)
+        elif val >= beta:
+            ttable[tuple(board.pieces[0]+board.pieces[1]+[board.to_move])] = (val, 1, depth)
+        else:
+            ttable[tuple(board.pieces[0]+board.pieces[1]+[board.to_move])] = (val, 0, depth)
+
+        return val
+
+
     def search_negascout(self, board):
         """
         Negascout search
         """
+        print(f"info depth {self.aim_depth}")
         return self.__negascout(board, self.aim_depth, -10000000, 10000000)
 
-    def __negascout(self, board, depth, alpha, beta):
+    def __negascout(self, board, depth, alpha, beta, first=True):
+
+        if not first and tuple(board.pieces[0]+board.pieces[1]+[board.to_move]) in self.past_positions:
+            return 0
+
         if depth == 0 or board.is_check_or_stalemate():
             return self.quiescence(board, alpha, beta)
             #return (-1)**(1 - board.to_move) * self.evaluator.weighted_piece_scores(board)
         b = beta
         counter = 1
-
+        current_eval = 0
         for move in sorted(board.gen_legal_moves(), key=lambda move: self.evaluator.eval_move(board, move)):
 
             if counter == 1:
@@ -95,9 +223,9 @@ class Searcher:
 
             new_board = board.board_copy()
             new_board = new_board.make_generated_move(move)
-            current_eval = -self.__negascout(new_board, depth - 1, -b, -alpha)
+            current_eval = -self.__negascout(new_board, depth - 1, -b, -alpha, False)
             if current_eval > alpha and current_eval < beta and counter > 1:
-                current_eval = -self.__negascout(new_board, depth - 1, -beta, -alpha)
+                current_eval = -self.__negascout(new_board, depth - 1, -beta, -alpha, False)
 
             if current_eval > alpha:
                 alpha = current_eval

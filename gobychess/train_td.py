@@ -13,9 +13,9 @@ import tensorflow as tf
 from tensorflow.math import log, pow, sigmoid
 
 model = tf.keras.Sequential([
-  tf.keras.layers.Dense(50, activation=tf.nn.relu, input_shape=(768,)),  # input shape required
+  tf.keras.layers.Dense(150, activation=tf.nn.relu, input_shape=(768,)),  # input shape required
 #  tf.keras.layers.Dropout(0.1),
-  tf.keras.layers.Dense(10, activation=tf.nn.relu),
+  tf.keras.layers.Dense(50, activation=tf.nn.relu),
   tf.keras.layers.Dense(1, activation=tf.keras.activations.tanh)
 ])
 
@@ -35,10 +35,10 @@ dset_val_eval = f_val_eval['features']
 
 
 alpha = 1
-td_lambda = 0.5
-num_epochs = 30
+td_lambda = 0.7
+num_epochs = 20
 batch_size = 32
-dset_size = 100000
+dset_size = 40000
 
 def predict(pmodel, position, training):
     y_position = pmodel(position, training=training)
@@ -50,7 +50,7 @@ def grad(pmodel, position):
         pred = predict(pmodel, position, training=True)
     return tape.gradient(pred, pmodel.trainable_variables)
 
-optimizer = tf.keras.optimizers.SGD(learning_rate=0.000001)
+optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
 
 fval = h5py.File('data/test.h5', 'r')
 dset_val = fval['features']
