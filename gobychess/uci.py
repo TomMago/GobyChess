@@ -97,7 +97,7 @@ def main():
             start = time.time()
             evaluation = searcher.search_negascout(board)
             end = time.time()
-            print("scout ", end - start)
+            #print("scout ", end - start)
 
             print(f'bestmove {san_from_move(searcher.best_move)}')
 

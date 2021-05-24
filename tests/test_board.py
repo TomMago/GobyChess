@@ -59,7 +59,6 @@ class BoardTests(unittest.TestCase):
     def test_make_moves(self):
         test_board = Board()
         test_board.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-        # print("e2e4")
         test_board.make_generated_move((index_of_square('e2'), index_of_square('e4'), None))
         self.assertEqual(test_board.to_move, 0)
         self.assertEqual(test_board.piece_on(28), None)
@@ -73,15 +72,6 @@ class BoardTests(unittest.TestCase):
         test_board.from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8")
         test_board.make_generated_move((index_of_square('a2'), index_of_square('a3'), None))
         test_board.make_generated_move((index_of_square('f2'), index_of_square('h1'), None))
-        print(len(list(test_board.gen_legal_moves())))
-        print(list(test_board.gen_legal_moves()))
-        # moves = list(test_board.gen_legal_moves())
-        # for move in moves:
-        #    print(move)
-        #    print_bitboard(bitboard_of_index(move[0]) | bitboard_of_index(move[1]))
-        #    print()
-        # print(len(list(test_board.gen_legal_moves())))
-        # self.assertEqual(0, 1)
 
     def test_in_check(self):
         test_board = Board()

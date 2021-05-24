@@ -7,7 +7,7 @@ import itertools
 
 from . import movegen as mvg
 from .utils import (bitboard_of_index, bitboard_of_square, get_bit,
-                    print_bitboard, set_bit, unset_bit)
+                    print_bitboard, set_bit, unset_bit, forward_bit_scan)
 
 
 class Board:
@@ -57,14 +57,17 @@ class Board:
             self.castling_rights['white kingside'] = 1
         else:
             self.castling_rights['white kingside'] = 0
+
         if 'Q' in words[2]:
             self.castling_rights['white queenside'] = 1
         else:
             self.castling_rights['white queenside'] = 0
+
         if 'k' in words[2]:
             self.castling_rights['black kingside'] = 1
         else:
             self.castling_rights['black kingside'] = 0
+
         if 'q' in words[2]:
             self.castling_rights['black queenside'] = 1
         else:
@@ -381,6 +384,8 @@ class Board:
         tmp_board = self.board_copy()
         opponent = 1 - tmp_board.to_move
 
+
+
         tmp_board.update_piece(tmp_board.to_move, piece_to_move, square_from, square_to)
 
         # check if capture:
@@ -456,7 +461,7 @@ class Board:
 
     def update_castling_rights(self, move, piece_to_move):
         """
-        update casltling rights for a given move
+        update castling rights for a given move
 
         Args:
             move (tuple): Move in the form (square_from, square_to, promotion)
@@ -476,11 +481,11 @@ class Board:
         # if rook moves or is captured update castling rights
         if square_from == 0 or square_to == 0:
             self.castling_rights['white queenside'] = 0
-        elif square_from == 7 or square_to == 7:
+        if square_from == 7 or square_to == 7:
             self.castling_rights['white kingside'] = 0
-        elif square_from == 56 or square_to == 56:
+        if square_from == 56 or square_to == 56:
             self.castling_rights['black queenside'] = 0
-        elif square_from == 63 or square_to == 63:
+        if square_from == 63 or square_to == 63:
             self.castling_rights['black kingside'] = 0
 
     def reset_board(self):

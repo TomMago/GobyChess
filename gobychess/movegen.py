@@ -128,7 +128,7 @@ def generate_king():
             attack_board = set_bit(attack_board, i - 8)
         if i % 8 != 0 and (i + 7) <= 63:
             attack_board = set_bit(attack_board, i + 7)
-        if i % 8 != 0 and (i - 9) > 0:
+        if i % 8 != 0 and (i - 9) >= 0:
             attack_board = set_bit(attack_board, i - 9)
         moves.append(attack_board)
     return moves

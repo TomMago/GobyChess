@@ -14,13 +14,14 @@ import chess
 import chess.engine
 import chess.pgn
 import numpy as np
+import multiprocessing
 
 # Enable debug logging.
 # logging.basicConfig(level=logging.DEBUG)
 
 DEPTH = 2
-BESTCOUNT = 4
-CHILDREN = 30
+BESTCOUNT = 3
+CHILDREN = 20
 EPOCHS = 5
 VARIATION = 6
 
@@ -74,15 +75,19 @@ class Tournament:
         engine1.quit()
         engine2.quit()
 
-
     def play_tournament(self):
         """
         play full round tournament
         """
+        pool = multiprocessing.Pool(4)
         for player1 in self.players:
+            opponents = []
             for player2 in self.players:
                 if not player1 == player2:
-                    self.play_game(player1, player2)
+                    #self.play_game(player1, player2)
+                    opponents.append((player1, player2))
+
+            res = pool.starmap(self.play_game, opponents)
 
     def getbest(self, bestcount):
         sort = sorted(self.players.items(), key=lambda x: x[1], reverse=True)
