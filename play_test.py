@@ -21,7 +21,7 @@ import multiprocessing
 
 DEPTH = 2
 BESTCOUNT = 3
-CHILDREN = 20
+CHILDREN = 10
 EPOCHS = 5
 VARIATION = 6
 
@@ -46,7 +46,6 @@ class Tournament:
         game.headers["Event"] = "gobyfight"
         game.headers["White"] = f"gbch-{self.epoch}-{player1}"
         game.headers["Black"] = f"gbch-{self.epoch}-{player2}"
-        #print("Starting game", end="\r")
         board = chess.Board()
         node = game.game()
         while not board.is_game_over():
@@ -59,21 +58,24 @@ class Tournament:
             board.push(result.move)
             node = node.add_variation(chess.Move.from_uci(result.move.uci()))
         outcome = board.outcome(claim_draw=True).winner
-        #print("Finished game", end="\r")
         if outcome:
-            self.players[player1] += 1
+            #self.players[player1] += 1
+            ret = player1
             print(f"{player1} won agains {player2}", end="\r")
         elif outcome == False:
-            self.players[player2] += 1
+            #self.players[player2] += 1
+            ret = player2
             print(f"{player2} won agains {player1}", end="\r")
         elif outcome == None:
-            self.players[player1] += 0.5
-            self.players[player2] += 0.5
+            #self.players[player1] += 0.5
+            #self.players[player2] += 0.5
+            ret = -player2
             print(f"{player1} vs {player2} ended in a draw", end="\r")
         game.headers["Result"] = board.outcome().result()
         print(game, file=open(os.path.abspath("games.pgn"), "a+"), end="\n\n")
         engine1.quit()
         engine2.quit()
+        return ret
 
     def play_tournament(self):
         """
@@ -88,6 +90,15 @@ class Tournament:
                     opponents.append((player1, player2))
 
             res = pool.starmap(self.play_game, opponents)
+
+            for player in res:
+                if player < 0:
+                    self.players[player1] += 0.5
+                    self.players[abs(player2)] += 0.5
+                else:
+                    self.players[player] += 1
+            print(self.players)
+
 
     def getbest(self, bestcount):
         sort = sorted(self.players.items(), key=lambda x: x[1], reverse=True)
