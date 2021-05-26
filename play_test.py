@@ -20,10 +20,11 @@ import multiprocessing
 # logging.basicConfig(level=logging.DEBUG)
 
 DEPTH = 2
-BESTCOUNT = 3
+BESTCOUNT = 4
 CHILDREN = 10
 EPOCHS = 5
 VARIATION = 6
+
 
 class Tournament:
 
@@ -94,7 +95,7 @@ class Tournament:
             for player in res:
                 if player < 0:
                     self.players[player1] += 0.5
-                    self.players[abs(player2)] += 0.5
+                    self.players[abs(player)] += 0.5
                 else:
                     self.players[player] += 1
             print(self.players)
@@ -105,40 +106,58 @@ class Tournament:
         best = [i[0] for i in sort[:bestcount]]
         return best
 
-def population_from_parents(parents, epoch, offsprings):
-    '''
-    take list of parent ids, pull files from epoch folder and create fixed number of offsprings from parent population.
-    save offsprings in new folder
-    '''
-    offsprings_per_parent = offsprings // len(parents)
-    os.mkdir(os.path.abspath(f"settings/epoch-{epoch + 1}"))
-    children_number = 0
-    for i in parents:
-        parent_square = np.genfromtxt(f'settings/epoch-{epoch}/gbch-{epoch}-{i}_square.csv', delimiter=",")
-        parent_piece = np.genfromtxt(f'settings/epoch-{epoch}/gbch-{epoch}-{i}_piece.csv', delimiter=",")
-        np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{i}_square.csv", parent_square, fmt='%i', delimiter=",")
-        np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{i}_piece.csv", parent_piece, fmt='%i', delimiter=",")
-        children_number += 1
-        for j in range(offsprings_per_parent):
-            offspring_square = parent_square + np.random.randint(-VARIATION, VARIATION, size=(6, 64))
-            offspring_piece = parent_piece + np.random.randint(-VARIATION, VARIATION, size=(6,))
-            np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{len(parents) + i * offsprings_per_parent + j}_square.csv", offspring_square, fmt='%i', delimiter=",")
-            np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{len(parents) + i * offsprings_per_parent + j}_piece.csv", offspring_piece, fmt='%i', delimiter=",")
-            children_number += 1
-    return children_number
 
-def play_epoch(parents, epoch, children):
-    print(f"Epoch {epoch + 1}:")
-    children_number = population_from_parents(range(len(parents)), epoch, children)
-    print("created ", children_number, f" children in /settings/epoch-{epoch + 1}")
-    tournament = Tournament(range(children_number), epoch + 1, DEPTH)
-    tournament.play_tournament()
-    print(sorted(tournament.players.items(), key=lambda x: x[1], reverse=True))
-    best = tournament.getbest(BESTCOUNT)
-    print("best: ", best)
-    print(f"End Epoch {epoch + 1}:")
-    return best
 
-best = [0]
-for epoch in range(EPOCHS):
-    best = play_epoch(best, epoch, CHILDREN)
+
+class Optimization:
+
+    def __init__(self, depth, bestcount, children, epochs, variation):
+        self.depth = depth
+        self.bestcount = bestcount
+        self.children = children
+        self.epochs = epochs
+        self.variation = variation
+        self.runningid = 1
+
+    def population_from_parents(self, parents, epoch, offsprings):
+        '''
+        take list of parent ids, pull files from epoch folder and create fixed number of offsprings from parent population.
+        save offsprings in new folder
+        '''
+        offsprings_per_parent = offsprings // len(parents)
+        os.mkdir(os.path.abspath(f"settings/epoch-{epoch + 1}"))
+        children = []
+        children.extend(parents)
+        for i in parents:
+            parent_square = np.genfromtxt(f'settings/epoch-{epoch}/gbch-{epoch}-{i}_square.csv', delimiter=",")
+            parent_piece = np.genfromtxt(f'settings/epoch-{epoch}/gbch-{epoch}-{i}_piece.csv', delimiter=",")
+            np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{i}_square.csv", parent_square, fmt='%i', delimiter=",")
+            np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{i}_piece.csv", parent_piece, fmt='%i', delimiter=",")
+            for j in range(offsprings_per_parent):
+                offspring_square = parent_square + np.random.randint(-VARIATION, self.variation, size=(6, 64))
+                offspring_piece = parent_piece + np.random.randint(-VARIATION, self.variation, size=(6,))
+                np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{self.runningid}_square.csv", offspring_square, fmt='%i', delimiter=",")
+                np.savetxt(f"settings/epoch-{epoch + 1}/gbch-{epoch + 1}-{self.runningid}_piece.csv", offspring_piece, fmt='%i', delimiter=",")
+                children.append(self.runningid)
+                self.runningid += 1
+
+        return children
+
+    def play_epoch(self, parents, epoch, children):
+        print(f"Epoch {epoch + 1}:")
+        children = self.population_from_parents(parents, epoch, children)
+        print("created ", len(children), f" children in /settings/epoch-{epoch + 1}")
+        tournament = Tournament(children, epoch + 1, DEPTH)
+        tournament.play_tournament()
+        print(sorted(tournament.players.items(), key=lambda x: x[1], reverse=True))
+        best = tournament.getbest(BESTCOUNT)
+        print("best: ", best)
+        print(f"End Epoch {epoch + 1}:")
+        return best
+
+
+if __name__ == "__main__":
+    best = [0]
+    opt = Optimization(DEPTH, BESTCOUNT, CHILDREN, EPOCHS, VARIATION)
+    for epoch in range(EPOCHS):
+        best = opt.play_epoch(best, epoch, CHILDREN)
