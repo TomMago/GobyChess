@@ -1,5 +1,5 @@
 # GobyChess
 
-This is a chess eingine written in python.
+This is a chess engine written in python.
 
 You can play in on [lichess](https://lichess.org/@/GobyChess).
