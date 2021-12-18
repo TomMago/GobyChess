@@ -14,7 +14,3 @@ It currently features:
 5. Basic UCI implementation
 
 For a reasonable perfomance it is best to run the engine with pypy like in goby.sh. 
-
-
-
->>>>>>> dc6129a4d5a5e061714714402d9cd472efc599f8
