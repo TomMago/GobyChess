@@ -1,8 +1,9 @@
 # GobyChess
 
-This is a chess eingine written in python.
+This is a chess engine written in python.
 
-You can play in on [lichess](https://lichess.org/@/GobyChess).
+
+You can play it on [lichess](https://lichess.org/@/GobyChess).
 
 It currently features:
 
@@ -14,3 +15,6 @@ It currently features:
 
 For a reasonable perfomance it is best to run the engine with pypy like in goby.sh. 
 
+
+
+>>>>>>> dc6129a4d5a5e061714714402d9cd472efc599f8
